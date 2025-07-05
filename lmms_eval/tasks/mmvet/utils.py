@@ -1,12 +1,11 @@
 import os
-import requests
 import time
-import logging
-import pandas as pd
-import yaml
 from pathlib import Path
 
-eval_logger = logging.getLogger("lmms-eval")
+import pandas as pd
+import requests
+import yaml
+from loguru import logger as eval_logger
 
 with open(Path(__file__).parent / "mmvet.yaml", "r") as f:
     raw_data = f.readlines()
@@ -18,8 +17,23 @@ with open(Path(__file__).parent / "mmvet.yaml", "r") as f:
 
     config = yaml.safe_load("".join(safe_data))
 
-API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions")
-API_KEY = os.getenv("OPENAI_API_KEY", "YOUR_API_KEY")
+API_TYPE = os.getenv("API_TYPE", "openai")
+
+if API_TYPE == "openai":
+    API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions")
+    API_KEY = os.getenv("OPENAI_API_KEY", "YOUR_API_KEY")
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    }
+elif API_TYPE == "azure":
+    API_URL = os.getenv("AZURE_ENDPOINT", "https://api.cognitive.microsoft.com/sts/v1.0/issueToken")
+    API_KEY = os.getenv("AZURE_API_KEY", "YOUR_API_KEY")
+    headers = {
+        "api-key": API_KEY,
+        "Content-Type": "application/json",
+    }
+
 GPT_EVAL_MODEL_NAME = config["metadata"]["gpt_eval_model_name"]
 MM_VET_PROMPT = """Compare the ground truth and prediction from AI models, to give a correctness score for the prediction. <AND> in the ground truth means it is totally right only when all elements in the ground truth are present in the prediction, and <OR> means it is totally right when any one element in the ground truth is present in the prediction. The correctness score is 0.0 (totally wrong), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, or 1.0 (totally right). Just complete the last space of the correctness score.
 gpt_query_prompt | Ground truth | Prediction | Correctness
@@ -51,6 +65,9 @@ def get_chat_response(prompt, model=GPT_EVAL_MODEL_NAME, temperature=0.0, max_to
         "max_tokens": max_tokens,
     }
 
+    if API_TYPE == "azure":
+        payload.pop("model")
+
     while patience > 0:
         patience -= 1
         try:
@@ -58,7 +75,7 @@ def get_chat_response(prompt, model=GPT_EVAL_MODEL_NAME, temperature=0.0, max_to
                 API_URL,
                 headers=headers,
                 json=payload,
-                timeout=120,
+                timeout=60,
             )
             response.raise_for_status()
             response_data = response.json()
@@ -203,11 +220,11 @@ def mmvet_aggregate_results(results):
     return overall_score
 
 
-def doc_to_text(doc, model_specific_prompt_kwargs=None):
-    if model_specific_prompt_kwargs is None:
+def doc_to_text(doc, lmms_eval_specific_kwargs=None):
+    if lmms_eval_specific_kwargs is None:
         return doc["question"]
     question = doc["question"]
-    pre_prompt = model_specific_prompt_kwargs.get("pre_prompt", "")
-    post_prompt = model_specific_prompt_kwargs.get("post_prompt", "")
+    pre_prompt = lmms_eval_specific_kwargs.get("pre_prompt", "")
+    post_prompt = lmms_eval_specific_kwargs.get("post_prompt", "")
 
     return f"{pre_prompt}{question}{post_prompt}"

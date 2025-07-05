@@ -1,13 +1,13 @@
-import logging
-import yaml
+import json
 import os
 from pathlib import Path
-import pandas as pd
-import json
 
-eval_logger = logging.getLogger("lmms-eval")
-from lmms_eval.tasks.mathvista.mathvista_evals import MathVistaEvaluator
+import pandas as pd
+import yaml
+from loguru import logger as eval_logger
+
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
+from lmms_eval.tasks.mathvista.mathvista_evals import MathVistaEvaluator
 
 with open(Path(__file__).parent / "mathvista.yaml", "r") as f:
     raw_data = f.readlines()
@@ -19,14 +19,31 @@ with open(Path(__file__).parent / "mathvista.yaml", "r") as f:
 
     config = yaml.safe_load("".join(safe_data))
 
-mathvista_evaluator = MathVistaEvaluator(api_key=os.getenv("OPENAI_API_KEY", "YOUR_API_KEY"), gpt_model=config["metadata"]["gpt_eval_model_name"])
+
+API_TYPE = os.getenv("API_TYPE", "openai")
+if API_TYPE == "openai":
+    API_URL = os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions")
+    API_KEY = os.getenv("OPENAI_API_KEY", "YOUR_API_KEY")
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+    }
+elif API_TYPE == "azure":
+    API_URL = os.getenv("AZURE_ENDPOINT", "https://api.cognitive.microsoft.com/sts/v1.0/issueToken")
+    API_KEY = os.getenv("AZURE_API_KEY", "YOUR_API_KEY")
+    headers = {
+        "api-key": API_KEY,
+        "Content-Type": "application/json",
+    }
+
+mathvista_evaluator = MathVistaEvaluator(api_key=API_KEY, gpt_model=config["metadata"]["gpt_eval_model_name"])
 
 
 def mathvista_doc_to_visual(doc):
     return [doc["decoded_image"].convert("RGB")]
 
 
-def mathvista_doc_to_text(doc, model_specific_prompt_kwargs=None):
+def mathvista_doc_to_text(doc, lmms_eval_specific_kwargs=None):
     problem = {
         "question_type": doc["question_type"],
         "answer_type": doc["answer_type"],
@@ -38,7 +55,13 @@ def mathvista_doc_to_text(doc, model_specific_prompt_kwargs=None):
         "answer": doc["answer"] if "answer" in doc else None,
         "precision": doc["precision"] if "precision" in doc else 0,
     }
-    query_prompt = mathvista_evaluator.create_one_query(problem, examples=None, shot_num=0, shot_type=model_specific_prompt_kwargs["shot_type"])
+    query_prompt = mathvista_evaluator.create_one_query(
+        problem,
+        shot_num=lmms_eval_specific_kwargs["shot"],
+        shot_type=lmms_eval_specific_kwargs["shot_type"],
+        use_caption=lmms_eval_specific_kwargs["use_caption"],
+        use_ocr=lmms_eval_specific_kwargs["use_ocr"],
+    )
     return query_prompt
 
 

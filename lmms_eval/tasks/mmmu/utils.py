@@ -1,18 +1,29 @@
-from collections import defaultdict
-import re
 import ast
-import random
-import numpy as np
-import os
 import json
-import logging
+import os
+import random
+import re
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+import yaml
+from loguru import logger as eval_logger
 
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
 
-lmms_logger = logging.getLogger("lmms-eval")
-
-MULTI_CHOICE_PROMPT = "Answer with the option letter from the given choices directly."
+MULTI_CHOICE_PROMPT = "Answer with the option's letter from the given choices directly."
 OPEN_ENDED_PROMPT = "Answer the question using a single word or phrase."
+
+with open(Path(__file__).parent / "_default_template_yaml", "r") as f:
+    raw_data = f.readlines()
+    safe_data = []
+    for i, line in enumerate(raw_data):
+        # remove function definition since yaml load cannot handle it
+        if "!function" not in line:
+            safe_data.append(line)
+
+    config = yaml.safe_load("".join(safe_data))
 
 
 def replace_images_tokens(input_string):
@@ -36,22 +47,24 @@ def construct_prompt(doc):
         # Weirdly, data["options"] is a string in MMMU Huggingface dataset
         parsed_options = parse_options(ast.literal_eval(doc["options"]))
         # parsed_options already prepends a newline so no need to add space here
-        question = f"{question}\n{parsed_options}\n{MULTI_CHOICE_PROMPT}"
+        question = f"{question}\n{parsed_options}\n\n{MULTI_CHOICE_PROMPT}"
     else:
-        question = f"{question}\n{OPEN_ENDED_PROMPT}"
+        question = f"{question}\n\n{OPEN_ENDED_PROMPT}"
     return question
 
 
 def mmmu_doc_to_text(doc):
     question = construct_prompt(doc)
-    return replace_images_tokens(question)
+    if config["metadata"]["interleaved_format"]:
+        question = replace_images_tokens(question)
+    return question
 
 
 def mmmu_doc_to_visual(doc):
     prompt = construct_prompt(doc)
     image_tokens = re.findall(r"<image \d+>", prompt)
     # Remove <> and  swap space as _
-    image_tokens = [image_token.strip("<>").replace(" ", "_") for image_token in image_tokens]
+    image_tokens = sorted(list(set([image_token.strip("<>").replace(" ", "_") for image_token in image_tokens])))
     visual = [doc[image_token].convert("RGB") for image_token in image_tokens]
     return visual
 
@@ -86,9 +99,10 @@ def extract_subset_name(input_string):
 
 def mmmu_test_aggregate_results_for_submission(results, args):
     path = generate_submission_file("mmmu_test_for_submission.json", args)
+    results_dict = {list(item.keys())[0]: list(item.values())[0] for item in results}
     with open(path, "w") as f:
-        json.dump(results, f)
-    lmms_logger.info(f"Results saved to {path}.")
+        json.dump(results_dict, f)
+    eval_logger.info(f"Results saved to {path}.")
 
 
 def mmmu_aggregate_results(results):
@@ -112,18 +126,18 @@ def mmmu_aggregate_results(results):
         in_domain_data_num = sum([cat_results["num_example"] for cat_results in in_domain_cat_results.values()])
         printable_results["Overall-" + domain] = {
             "num": int(in_domain_data_num),
-            "acc": round(in_domain_ins_acc, 3),
+            "acc": round(in_domain_ins_acc, 5),
         }
         # add sub category
         for cat_name, cat_results in in_domain_cat_results.items():
             printable_results[cat_name] = {
                 "num": int(cat_results["num_example"]),
-                "acc": round(cat_results["acc"], 3),
+                "acc": round(cat_results["acc"], 5),
             }
     all_ins_acc = calculate_ins_level_acc(evaluation_result)
     printable_results["Overall"] = {
         "num": sum([cat_results["num_example"] for cat_results in evaluation_result.values()]),
-        "acc": round(all_ins_acc, 3),
+        "acc": round(all_ins_acc, 5),
     }
     print(printable_results)
     return printable_results["Overall"]["acc"]

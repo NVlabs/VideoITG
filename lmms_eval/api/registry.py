@@ -1,8 +1,9 @@
+from typing import Callable, Dict
+
+import evaluate as hf_evaluate
+from loguru import logger as eval_logger
+
 from lmms_eval.api.model import lmms
-
-import logging
-
-eval_logger = logging.getLogger("lmms-eval")
 
 MODEL_REGISTRY = {}
 
@@ -32,6 +33,7 @@ def get_model(model_name):
 
 TASK_REGISTRY = {}  # Key: task name, Value: task ConfigurableTask class
 GROUP_REGISTRY = {}  # Key: group name, Value: list of task names or group names
+TASK_INITIALIZED = False
 ALL_TASKS = set()  # Set of all task names and group names
 func2task_index = {}  # Key: task ConfigurableTask class, Value: task name
 
@@ -74,6 +76,7 @@ DEFAULT_METRIC_REGISTRY = {
     ],
     "multiple_choice": ["acc", "acc_norm"],
     "generate_until": ["exact_match"],
+    "generate_until_multi_round": ["exact_match"],
 }
 
 
@@ -102,6 +105,22 @@ def register_metric(**args):
         return fn
 
     return decorate
+
+
+def get_metric(name: str, hf_evaluate_metric=False) -> Callable:
+    if not hf_evaluate_metric:
+        if name in METRIC_REGISTRY:
+            return METRIC_REGISTRY[name]
+        else:
+            eval_logger.warning(f"Could not find registered metric '{name}' in lm-eval, searching in HF Evaluate library...")
+
+    try:
+        metric_object = hf_evaluate.load(name)
+        return metric_object.compute
+    except Exception:
+        eval_logger.error(
+            f"{name} not found in the evaluate library! Please check https://huggingface.co/evaluate-metric",
+        )
 
 
 def register_aggregation(name):

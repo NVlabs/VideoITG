@@ -1,14 +1,13 @@
-import os
+import datetime
 import json
-from pycocoevalcap.eval import COCOEvalCap, Bleu, Meteor, Rouge, Cider, Spice
+import os
+
+from loguru import logger as eval_logger
+from pycocoevalcap.eval import Bleu, Cider, COCOEvalCap, Meteor, Rouge, Spice
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 from pycocotools.coco import COCO
+
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
-import datetime
-
-import logging
-
-eval_logger = logging.getLogger("lmms-eval")
 
 dir_name = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,7 +40,7 @@ def flickr_process_result(doc, result):
 
 
 def flickr_aggregation_result(results, metric, args):
-    scorers = [(Bleu(4), "Bleu_1"), (Bleu(4), "Bleu_2"), (Bleu(4), "Bleu_3"), (Bleu(4), "Bleu_4"), (Meteor(), "METEOR"), (Rouge(), "ROUGE_L"), (Cider(), "CIDEr"), (Spice(), "SPICE")]
+    scorers = [(Bleu(4), "Bleu_1"), (Bleu(4), "Bleu_2"), (Bleu(4), "Bleu_3"), (Bleu(4), "Bleu_4"), (Meteor(), "METEOR"), (Rouge(), "ROUGE_L"), (Cider(), "CIDEr")]  # , (Spice(), "SPICE")]
     scorers_dict = {s[1]: s for s in scorers}
 
     stored_results = []

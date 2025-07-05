@@ -1,13 +1,13 @@
 import csv
 import json
-from tqdm import tqdm
-import numpy as np
 import os
-import time
-import openai
 import threading
+import time
+
+import numpy as np
+import openai
 import requests
-import logging
+from tqdm import tqdm
 
 API_TYPE = os.getenv("API_TYPE", "openai")
 
@@ -26,7 +26,7 @@ elif API_TYPE == "azure":
         "Content-Type": "application/json",
     }
 
-eval_logger = logging.getLogger("lmms-eval")
+from loguru import logger as eval_logger
 
 
 def evaluate_by_chatgpt(data, output_entry, correctness_entry, gpt_model="gpt-4", load_json=False, save_json_path="./hallusion_output.json", retries=3):

@@ -1,12 +1,11 @@
-from collections import defaultdict
-import os
 import datetime
 import json
+import os
+from collections import defaultdict
+
+from loguru import logger as eval_logger
+
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
-
-import logging
-
-eval_logger = logging.getLogger("lmms-eval")
 
 dir_name = os.path.dirname(os.path.abspath(__file__))
 
@@ -39,14 +38,14 @@ def mme_doc_to_visual(doc):
     return [doc["image"].convert("RGB")]
 
 
-def mme_doc_to_text(doc, model_specific_prompt_kwargs=None):
+def mme_doc_to_text(doc, lmms_eval_specific_kwargs=None):
     question = doc["question"].strip()
-    if "pre_prompt" in model_specific_prompt_kwargs and model_specific_prompt_kwargs["pre_prompt"] != "":
+    if "pre_prompt" in lmms_eval_specific_kwargs and lmms_eval_specific_kwargs["pre_prompt"] != "":
         question = question.replace(replace_prompt, "")
-        question = f"{model_specific_prompt_kwargs['pre_prompt']}{question}"
-    if "post_prompt" in model_specific_prompt_kwargs and model_specific_prompt_kwargs["post_prompt"] != "":
+        question = f"{lmms_eval_specific_kwargs['pre_prompt']}{question}"
+    if "post_prompt" in lmms_eval_specific_kwargs and lmms_eval_specific_kwargs["post_prompt"] != "":
         question = question.replace(replace_prompt, "")
-        question = f"{question}{model_specific_prompt_kwargs['post_prompt']}"
+        question = f"{question}{lmms_eval_specific_kwargs['post_prompt']}"
     return question
 
 
@@ -56,6 +55,13 @@ def parse_pred_ans(pred_ans):
     pred_label = None
     if pred_ans in ["yes", "no"]:
         pred_label = pred_ans
+    elif len(pred_ans) == 1:
+        if pred_ans == "y":
+            pred_label = "yes"
+        elif pred_ans == "n":
+            pred_label = "no"
+        else:
+            pred_label = "other"
     else:
         prefix_pred_ans = pred_ans[:4]
         if "yes" in prefix_pred_ans:
@@ -82,7 +88,7 @@ def mme_process_results(doc, results):
     assert pred_ans in ["yes", "no", "other"]
     score = 1.0 if pred_ans == gt_ans else 0.0
     category = doc["category"]
-    key_name = "mme_percetion_score" if category in eval_type_dict["Perception"] else "mme_cognition_score"
+    key_name = "mme_perception_score" if category in eval_type_dict["Perception"] else "mme_cognition_score"
     # Note: the key name here is very important. It decides which aggregation function will receive the results
     # We note down the question id/category to help us aggregate the results later
     return {key_name: {"question_id": doc["question_id"], "category": category, "score": score}}
@@ -107,7 +113,7 @@ def mme_aggregate_results(results):
     for category, question2scores in category2score.items():
         total_score = 0
         for question_id, scores in question2scores.items():
-            assert len(scores) == 2
+            assert len(scores) == 2, "MME only supports pairwise evaluation"
             acc = sum(scores) / len(scores) * 100.0
             acc_plus = (sum(scores) == 2) * 100.0
             score = acc_plus + acc

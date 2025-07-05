@@ -1,0 +1,32 @@
+dataset_path: CG-Bench/CG-Bench
+dataset_kwargs:
+  token: True
+  data_files: cgbench_mini.json
+  cache_dir: cg_videos_720p
+  video: True
+task: cgbench_subtitles
+test_split: train
+output_type: generate_until
+doc_to_visual: !function utils.cgbench_doc_to_visual
+doc_to_text: !function utils.cgbench_doc_to_text_subtitle
+doc_to_target: "answer"
+generation_kwargs:
+  max_new_tokens: 16
+  temperature: 0
+  top_p: 1.0
+  num_beams: 1
+  do_sample: false
+# The return value of process_results will be used by metrics
+process_results: !function utils.cgbench_process_results
+# Note that the metric name can be either a registed metric function (such as the case for GQA) or a key name returned by process_results
+metric_list:
+  - metric: cgbench_perception_score
+    aggregation: !function utils.cgbench_aggregate_results
+    higher_is_better: true
+lmms_eval_specific_kwargs:
+  default:
+    pre_prompt: ""
+    post_prompt: "Please respond with only the letter of the correct answer."
+    frame_num: 32
+metadata:
+  - version: 0.0

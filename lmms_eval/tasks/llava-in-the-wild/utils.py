@@ -1,16 +1,16 @@
 import json
-import logging
 import os
-import requests
+import time
+from copy import deepcopy
+from pathlib import Path
+
 import numpy as np
 import openai
-from openai import OpenAI
-import time
+import requests
 import yaml
-from pathlib import Path
-from copy import deepcopy
+from loguru import logger as eval_logger
+from openai import OpenAI
 
-eval_logger = logging.getLogger("lmms-eval")
 NUM_SECONDS_TO_SLEEP = 5
 
 LLAVA_W_METRICS = ["gpt_eval_llava_conv", "gpt_eval_llava_detail", "gpt_eval_llava_complex"]
@@ -65,6 +65,9 @@ def get_eval(content: str, max_tokens: int, retries: int = 5):
         "max_tokens": max_tokens,
     }
 
+    if API_TYPE == "azure":
+        payload.pop("model")
+
     for attempt in range(retries):
         try:
             response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
@@ -105,11 +108,11 @@ def llava_doc_to_visual(doc):
     return [doc["image"].convert("RGB")]
 
 
-def llava_doc_to_text(doc, model_specific_prompt_kwargs=None):
-    if model_specific_prompt_kwargs is None:
-        model_specific_prompt_kwargs = {}
-    pre_prompt = model_specific_prompt_kwargs.get("pre_prompt", "")
-    post_prompt = model_specific_prompt_kwargs.get("post_prompt", "")
+def llava_doc_to_text(doc, lmms_eval_specific_kwargs=None):
+    if lmms_eval_specific_kwargs is None:
+        lmms_eval_specific_kwargs = {}
+    pre_prompt = lmms_eval_specific_kwargs.get("pre_prompt", "")
+    post_prompt = lmms_eval_specific_kwargs.get("post_prompt", "")
     return f"{pre_prompt}{doc['question']}{post_prompt}"
 
 

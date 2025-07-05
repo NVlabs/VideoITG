@@ -1,18 +1,15 @@
+import math
 import os.path as osp
-import time
 import random as rd
 import string
+import time
 from collections import defaultdict
-import requests
 
-import math
 import numpy as np
 import pandas as pd
+import requests
+from loguru import logger as eval_logger
 from tqdm import tqdm
-
-import logging
-
-eval_logger = logging.getLogger("lmms-eval")
 
 
 class MMBench_Evaluator:

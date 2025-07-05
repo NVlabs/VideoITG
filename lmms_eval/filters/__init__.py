@@ -1,8 +1,6 @@
-from lmms_eval.api.filter import FilterEnsemble
-from . import selection
-from . import extraction
-from . import transformation
+from lmms_eval.api.filter import Filter, FilterEnsemble
 
+from . import extraction, selection, transformation
 
 FILTER_REGISTRY = {
     "take_first": selection.TakeFirstFilter,
@@ -13,6 +11,7 @@ FILTER_REGISTRY = {
     "lowercase": transformation.LowercaseFilter,
     "uppercase": transformation.UppercaseFilter,
     "map": transformation.MapFilter,
+    "multi_choice_regex": extraction.MultiChoiceRegexFilter,
     # TODO: implement this filter. either it should take in an arbitrary "scoring"/reward function
     # that takes an input and returns a scalar and then should select the max reward,
     # or should implement different filters for different ways of handling a reward model's inference.

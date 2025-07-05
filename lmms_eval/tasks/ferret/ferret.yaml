@@ -13,7 +13,7 @@ generation_kwargs:
   image_aspect_ratio: original
   max_new_tokens: 1024
   temperature: 0
-  top_p: 0
+  top_p: 1.0
   num_beams: 1
   do_sample: false
 process_results: !function utils.ferret_process_results
@@ -33,7 +33,7 @@ metric_list:
 metadata:
   version: 0.0
   gpt_eval_model_name: "gpt-4-0314"
-model_specific_prompt_kwargs:
+lmms_eval_specific_kwargs:
   default:
     pre_prompt: ""
     post_prompt: ""

@@ -1,14 +1,13 @@
-import logging
-import yaml
+import json
 import os
 from pathlib import Path
-import pandas as pd
-import json
-from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
 
-eval_logger = logging.getLogger("lmms-eval")
-from lmms_eval.tasks.mmbench.mmbench_evals import MMBench_Evaluator
+import pandas as pd
+import yaml
+from loguru import logger as eval_logger
+
 from lmms_eval.tasks._task_utils.file_utils import generate_submission_file
+from lmms_eval.tasks.mmbench.mmbench_evals import MMBench_Evaluator
 
 with open(Path(__file__).parent / "mmbench.yaml", "r") as f:
     raw_data = f.readlines()
@@ -29,6 +28,9 @@ if API_TYPE == "openai":
 elif API_TYPE == "azure":
     API_URL = os.getenv("AZURE_ENDPOINT", "https://api.cognitive.microsoft.com/sts/v1.0/issueToken")
     API_KEY = os.getenv("AZURE_API_KEY", "YOUR_API_KEY")
+else:
+    API_URL = "YOUR_API_URL"
+    API_KEY = "YOUR_API_KEY"
 
 
 mmbench_evaluator = MMBench_Evaluator(sys_prompt=config["metadata"]["sys_prompt"], API_KEY=API_KEY, API_URL=API_URL, model_version=GPT_EVAL_MODEL_NAME)
@@ -38,7 +40,7 @@ def mmbench_doc_to_visual(doc):
     return [doc["image"].convert("RGB")]
 
 
-def mmbench_doc_to_text(doc, model_specific_prompt_kwargs=None):
+def mmbench_doc_to_text(doc, lmms_eval_specific_kwargs=None):
     option_candidate = ["A", "B", "C", "D", "E"]
     options_prompt, options_dict = mmbench_evaluator.create_options_prompt(doc, option_candidate)
 
@@ -58,8 +60,8 @@ def mmbench_doc_to_text(doc, model_specific_prompt_kwargs=None):
 
     query_prompt = f"{data['hint']} {data['question']} {data['options']}" if pd.notna(data["hint"]) else f"{data['question']} {data['options']}"
 
-    if model_specific_prompt_kwargs:
-        query_prompt = f"{query_prompt}\n{model_specific_prompt_kwargs['post_prompt']}"
+    if lmms_eval_specific_kwargs:
+        query_prompt = f"{query_prompt}\n{lmms_eval_specific_kwargs['post_prompt']}"
 
     return query_prompt
 

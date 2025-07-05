@@ -22,13 +22,17 @@ process_results: !function utils.sqa_process_results
 metadata:
   - version: 0.0
 
-model_specific_prompt_kwargs:
+lmms_eval_specific_kwargs:
   default:
     format: default
     pre_prompt: ""
     post_prompt: "\nAnswer with the option's letter from the given choices directly."
   qwen_vl:
     format: qwen_vl
+  idefics2:
+    format: default
+    pre_prompt: ""
+    post_prompt: "\nAnswer:"
 model_specific_generation_kwargs:
   llava:
     image_aspect_ratio: original
