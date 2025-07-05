@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 import json
 import logging
 import pathlib
-from typing import Dict, Optional, Sequence, List
+from typing import Dict, Optional, Sequence, List, Tuple
 
 import torch
 import numpy as np
@@ -50,9 +50,17 @@ from eagle.train.eagle_trainer import EagleTrainer
 
 from eagle import conversation as conversation_lib
 from eagle.model import *
-from eagle.mm_utils import tokenizer_image_token
+from eagle.mm_utils import tokenizer_image_token, read_video_decord, read_video_pyav
+from eagle.vision_utils import smart_resize
+
+
+import random
 
 from PIL import Image
+from torchvision.transforms import InterpolationMode
+from torchvision import transforms
+
+
 
 local_rank = None
 
@@ -63,6 +71,49 @@ def rank0_print(*args):
 
 from packaging import version
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse('0.14')
+
+
+def process_image(image_file, img_size=None):
+    image_obj = Image.open(image_file)
+    image = image_obj.convert("RGB")
+    ## resize
+    if img_size != 0:
+        resized_height, resized_width = smart_resize(
+            img_size,
+            img_size,
+        )
+    else:
+        width, height = image.size
+        resized_height, resized_width = smart_resize(
+            height,
+            width,
+        )
+    image = image.resize((resized_width, resized_height))
+
+    return image
+
+
+def process_video(video_file, img_size=None, target_fps=2, target_num_frm=32):
+    video = read_video_decord(video_file, target_num_frm, target_fps=target_fps)
+    if img_size != 0:
+        resized_height, resized_width = smart_resize(
+            img_size,
+            img_size,
+        )
+    else:
+        width, height = video.shape[1:3]
+        resized_height, resized_width = smart_resize(
+            height,
+            width,
+        )
+    video = torch.tensor(video).permute(0, 3, 1, 2)
+    video = transforms.functional.resize(
+            video,
+            [resized_height, resized_width],
+            interpolation=InterpolationMode.BICUBIC,
+            antialias=True,
+        ).float()
+    return video
 
 
 @dataclass
@@ -79,6 +130,12 @@ class ModelArguments:
     mm_use_im_patch_token: bool = field(default=True)
     mm_patch_merge_type: Optional[str] = field(default='flat')
     mm_vision_select_feature: Optional[str] = field(default="patch")
+    mm_use_4_vision_tokens: bool = field(default=False)
+    freeze_vision: bool = field(default=True)
+    vision_pretrained_path: str = field(default=None)
+    save_mm_mlp_adapter: bool = field(default=False)
+    vision_token_num: int = 12480
+    vision_min_num: int = 4
 
 @dataclass
 class DataArguments:
@@ -88,6 +145,9 @@ class DataArguments:
     is_multimodal: bool = False
     image_folder: Optional[str] = field(default=None)
     image_aspect_ratio: str = 'square'
+    video_frames: int = 16
+    fps: int = 1
+    image_size: int = 384
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
@@ -123,7 +183,7 @@ class TrainingArguments(transformers.TrainingArguments):
     lora_bias: str = "none"
     mm_projector_lr: Optional[float] = None
     vision_tower_layer_decay: Optional[float] = None
-    vision_tower_lr: Optional[float] = None
+    out_proj_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -200,7 +260,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
                                    output_dir: str):
     """Collects the state dict and dump to disk."""
 
-    if getattr(trainer.args, "tune_mm_mlp_adapter", False):
+    if getattr(trainer.args, "tune_mm_mlp_adapter", False) or getattr(trainer.args, "save_mm_mlp_adapter", False):
         # Only save Adapter
         keys_to_match = ['mm_projector']
         if getattr(trainer.args, "use_im_start_end", False):
@@ -345,6 +405,81 @@ def preprocess_multimodal(
             sentence["value"] = sentence["value"].replace(DEFAULT_IMAGE_TOKEN, replace_token)
 
     return sources
+
+def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant.") -> Dict:
+    # roles = {"human": "<|im_start|>user", "gpt": "<|im_start|>assistant"}
+    roles = {"human": "user", "gpt": "assistant"}
+
+    # Add image tokens to tokenizer as a special tokens
+    # Use a deepcopy of tokenizer so that we don't modify on the tokenizer
+    tokenizer = copy.deepcopy(tokenizer)
+    # When there is actually an image, we add the image tokens as a special token
+    if has_image:
+        tokenizer.add_tokens(["<image>"], special_tokens=True)
+
+    image_token_index = tokenizer.convert_tokens_to_ids("<image>")
+    im_start, im_end = tokenizer.additional_special_tokens_ids
+    # unmask_tokens = ["<|im_start|>", "<|im_start|>", "\n"]
+    unmask_tokens_idx =  [198, im_start, im_end]
+    nl_tokens = tokenizer("\n").input_ids
+
+    # Reset Qwen chat templates so that it won't include system message every time we apply
+    chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
+    tokenizer.chat_template = chat_template
+
+    # _system = tokenizer("system").input_ids + nl_tokens
+    # _user = tokenizer("user").input_ids + nl_tokens
+    # _assistant = tokenizer("assistant").input_ids + nl_tokens
+
+    # Apply prompt templates
+    input_ids, targets = [], []
+    for i, source in enumerate(sources):
+        if roles[source[0]["from"]] != roles["human"]:
+            source = source[1:]
+
+        input_id, target = [], []
+
+        # New version, use apply chat template
+        # Build system message for each sentence
+        input_id += tokenizer.apply_chat_template([{"role" : "system", "content" : system_message}])
+        target += [IGNORE_INDEX] * len(input_id)
+
+        for conv in source:
+            # Make sure llava data can load
+            try:
+                role = conv["role"]
+                content = conv["content"]
+            except:
+                role = conv["from"]
+                content = conv["value"]
+
+            role =  roles.get(role, role)
+            
+            conv = [{"role" : role, "content" : content}]
+            encode_id = tokenizer.apply_chat_template(conv)
+            input_id += encode_id
+            if role in ["user", "system"]:
+                target += [IGNORE_INDEX] * len(encode_id)
+            else:
+                target += encode_id
+        
+
+                    
+        assert len(input_id) == len(target), f"{len(input_id)} != {len(target)}"
+        for idx, encode_id in enumerate(input_id):
+            if encode_id in unmask_tokens_idx:
+                target[idx] = encode_id
+            if encode_id == image_token_index:
+                input_id[idx] = IMAGE_TOKEN_INDEX
+        input_ids.append(input_id)
+        targets.append(target)
+    input_ids = torch.tensor(input_ids, dtype=torch.long)
+    targets = torch.tensor(targets, dtype=torch.long)
+
+    return dict(
+        input_ids=input_ids,  # tensor(bs x seq_len)
+        labels=targets,  # tensor(bs x seq_len)
+    )
 
 
 def preprocess_llama_2(
@@ -822,6 +957,8 @@ def preprocess(
         return preprocess_v1(sources, tokenizer, has_image=has_image)
     if conversation_lib.default_conversation.version == "llama3":
         return preprocess_llama_3(sources, tokenizer, has_image=has_image)
+    if conversation_lib.default_conversation.version == "qwen":
+        return preprocess_qwen(sources, tokenizer, has_image=has_image)
     if conversation_lib.default_conversation.version == "mpt-yi-34b":
         return preprocess_yi34b_chatml(sources, tokenizer, has_image=has_image)
     if conversation_lib.default_conversation.version == "mpt":
@@ -883,62 +1020,77 @@ class LazySupervisedDataset(Dataset):
     def modality_lengths(self):
         length_list = []
         for sample in self.list_data_dict:
-            cur_len = sum(len(conv['value'].split()) for conv in sample['conversations'])
-            cur_len = cur_len if 'image' in sample else -cur_len
+            if "question" in sample:
+                cur_len = len(sample['question'].split())
+            else:
+                cur_len = sum(len(conv['value'].split()) for conv in sample['conversations'])
             length_list.append(cur_len)
         return length_list
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        sources = self.list_data_dict[i]
-        if isinstance(i, int):
-            sources = [sources]
-        assert len(sources) == 1, "Don't know why it is wrapped to a list"  # FIXME
-        if 'image' in sources[0]:
-            image_file = self.list_data_dict[i]['image']
-            image_folder = self.data_args.image_folder
-            processor = self.data_args.image_processor
+        attempt, max_attempt = 0, 10
+        while attempt < max_attempt:
             try:
-                image = Image.open(os.path.join(image_folder, image_file)).convert('RGB')
-            except:
-                print(f'image file {os.path.join(image_folder, image_file)} broken.., using a dummy black image instead')
-                image = Image.fromarray(np.zeros((224,224,3), dtype=np.uint8))
-            if self.data_args.image_aspect_ratio == 'pad':
-                def expand2square(pil_img, background_color):
-                    width, height = pil_img.size
-                    if width == height:
-                        return pil_img
-                    elif width > height:
-                        result = Image.new(pil_img.mode, (width, width), background_color)
-                        result.paste(pil_img, (0, (width - height) // 2))
-                        return result
-                    else:
-                        result = Image.new(pil_img.mode, (height, height), background_color)
-                        result.paste(pil_img, ((height - width) // 2, 0))
-                        return result
-                image = expand2square(image, tuple(int(x*255) for x in processor.image_mean))
-                image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
-            else:
-                image = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
-            sources = preprocess_multimodal(
-                copy.deepcopy([e["conversations"] for e in sources]),
-                self.data_args)
-        else:
-            sources = copy.deepcopy([e["conversations"] for e in sources])
+                sources = self.list_data_dict[i]
+                if "question" in sources:
+                    sources["conversations"] = [
+                        {
+                            "from": "human",
+                            "value": ""
+                        },
+                        {
+                            "from": "gpt",
+                            "value": sources["question"].replace("<image>\n", "")
+                        }
+                    ]
+                if isinstance(i, int):
+                    sources = [sources]
+                assert len(sources) == 1, "Don't know why it is wrapped to a list"  # FIXME
+                if 'video' in sources[0]:
+                    video_file = self.list_data_dict[i]['video']
+                    video_folder = self.data_args.image_folder
+                    video_file = os.path.join(video_folder, video_file)
+                    # directly load video file
+                    if not os.path.exists(video_file):
+                        print('File {} not exist!'.format(video_file))
+                    # print(self.data_args.video_frames)
+                    target_fps = self.data_args.fps
+                    all_images = []
+
+                    try:
+                        video = read_video_decord(video_file, self.data_args.video_frames, target_fps=target_fps)
+                    except:
+                        video = read_video_pyav(video_file, self.data_args.video_frames, target_fps=target_fps)
+                    processor = self.data_args.image_processor
+                    image = processor.preprocess(video, return_tensors='pt')['pixel_values']
+                    all_images.append(image)
+                    grounding_label = torch.zeros(image.shape[0])
+                    for clip_number in self.list_data_dict[i]['clip_num']:
+                        grounding_label[clip_number] = 1
+                        
+                    all_images = torch.cat(all_images, dim=0)
+                    sources = preprocess_multimodal(
+                        copy.deepcopy([e["conversations"] for e in sources]),
+                        self.data_args)
+                else:
+                    i = random.randint(0, len(self.list_data_dict)-1)
+                break
+            except Exception as e:
+                attempt += 1
+                print(f"Error in loading id:{i} sample, retrying {attempt} time... Error={e}")
+                i = random.randint(0, len(self.list_data_dict)-1)
+                
+        has_image = True
         data_dict = preprocess(
             sources,
             self.tokenizer,
-            has_image=('image' in self.list_data_dict[i]))
+            has_image=has_image)
         if isinstance(i, int):
             data_dict = dict(input_ids=data_dict["input_ids"][0],
                              labels=data_dict["labels"][0])
 
-        # image exist in the data
-        if 'image' in self.list_data_dict[i]:
-            data_dict['image'] = image
-        elif self.data_args.is_multimodal:
-            # image does not exist in the data, but the model is multimodal
-            crop_size = self.data_args.image_processor.crop_size
-            data_dict['image'] = torch.zeros(3, crop_size['height'], crop_size['width'])
+        data_dict['image'] = all_images
+        data_dict['grounding_labels'] = grounding_label
         return data_dict
 
 
@@ -968,10 +1120,12 @@ class DataCollatorForSupervisedDataset(object):
 
         if 'image' in instances[0]:
             images = [instance['image'] for instance in instances]
+            grounding_labels = [instance['grounding_labels'] for instance in instances]
             if all(x is not None and x.shape == images[0].shape for x in images):
                 batch['images'] = torch.stack(images)
             else:
                 batch['images'] = images
+            batch['grounding_labels'] = grounding_labels
 
         return batch
 
@@ -988,6 +1142,50 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                 data_collator=data_collator)
 
 
+def get_model(model_args, training_args, bnb_model_from_pretrained_args, attn_implementation):
+    customized_kwargs = dict()
+    customized_kwargs.update(bnb_model_from_pretrained_args)
+
+    if model_args.vision_tower is not None:
+        if (
+            "wizardlm-2" in model_args.model_name_or_path.lower()
+            or "vicuna" in model_args.model_name_or_path.lower()
+            or "llama" in model_args.model_name_or_path.lower()
+            or "yi" in model_args.model_name_or_path.lower()
+            or "nous-hermes" in model_args.model_name_or_path.lower()
+            and "wizard-2" in model_args.model_name_or_path.lower()
+        ):
+            model = EagleLlamaForCausalLM.from_pretrained(
+                model_args.model_name_or_path,
+                cache_dir=training_args.cache_dir,
+                attn_implementation=attn_implementation,
+                torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
+                low_cpu_mem_usage=False,
+                **customized_kwargs,
+            )
+        elif "qwen" in model_args.model_name_or_path.lower():
+            model = EagleQwenG.from_pretrained(
+                model_args.model_name_or_path,
+                cache_dir=training_args.cache_dir,
+                attn_implementation=attn_implementation,
+                torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
+                low_cpu_mem_usage=False,
+                ignore_mismatched_sizes=True,
+                **customized_kwargs,
+            )
+        else:
+            raise ValueError(f"Unknown model class {model_args}")
+    else:
+        model = transformers.LlamaForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            attn_implementation=training_args.attn_implementation,
+            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
+            low_cpu_mem_usage=False,
+            **customized_kwargs,
+        )
+    return model
+
 def train(attn_implementation=None):
     global local_rank
 
@@ -996,7 +1194,6 @@ def train(attn_implementation=None):
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
-
 
     bnb_model_from_pretrained_args = {}
     if training_args.bits in [4, 8]:
@@ -1017,22 +1214,9 @@ def train(attn_implementation=None):
             )
         ))
 
-    if model_args.vision_tower is not None:
-        model = EagleLlamaForCausalLM.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            attn_implementation=attn_implementation,
-            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
-            **bnb_model_from_pretrained_args
-        )
-    else:
-        model = transformers.LlamaForCausalLM.from_pretrained(
-            model_args.model_name_or_path,
-            cache_dir=training_args.cache_dir,
-            attn_implementation=attn_implementation,
-            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
-            **bnb_model_from_pretrained_args
-        )
+    assert "qwen" in model_args.model_name_or_path.lower(), "Only qwen2/qwen2.5 is supported"
+
+    model = get_model(model_args, training_args, bnb_model_from_pretrained_args, attn_implementation)
     model.config.use_cache = False
 
     if model_args.freeze_backbone:
@@ -1076,6 +1260,13 @@ def train(attn_implementation=None):
             model_max_length=training_args.model_max_length,
             padding_side="right"
         )
+    elif "qwen" in model_args.model_name_or_path.lower():
+        tokenizer = transformers.AutoTokenizer.from_pretrained(
+            model_args.model_name_or_path,
+            cache_dir=training_args.cache_dir,
+            model_max_length=training_args.model_max_length,
+            padding_side="right",
+        )
     else:
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             model_args.model_name_or_path,
@@ -1095,38 +1286,44 @@ def train(attn_implementation=None):
     elif model_args.version == "v0.5":
         tokenizer.pad_token = tokenizer.unk_token
     else:
-        tokenizer.pad_token = tokenizer.unk_token
+        if tokenizer.unk_token is not None:
+            tokenizer.pad_token = tokenizer.unk_token
         if model_args.version in conversation_lib.conv_templates:
             conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
         else:
             conversation_lib.default_conversation = conversation_lib.conv_templates["vicuna_v1"]
     
     # TODO, test here
-    if tokenizer.pad_token is None:
+    if tokenizer.pad_token is None and 'llama3' in model_args.model_name_or_path:
             print(f"Adding pad token as '<pad>'")
             smart_tokenizer_and_embedding_resize(
                 special_tokens_dict=dict(pad_token="<pad>"),
                 tokenizer=tokenizer,
                 model=model,
             )
+    else:
+        tokenizer.pad_token_id = 0
 
     if model_args.vision_tower is not None:
         model.get_model().initialize_vision_modules(
             model_args=model_args,
             fsdp=training_args.fsdp
         )
-        
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
 
         data_args.image_processor = vision_tower.image_processor
         data_args.is_multimodal = True
 
+        model.get_model().config.vision_token_num = model_args.vision_token_num
+        model.get_model().config.vision_min_num = model_args.vision_min_num
         model.config.image_aspect_ratio = data_args.image_aspect_ratio
         model.config.tokenizer_padding_side = tokenizer.padding_side
         model.config.tokenizer_model_max_length = tokenizer.model_max_length
 
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
+        model.config.save_mm_mlp_adapter = training_args.save_mm_mlp_adapter = model_args.save_mm_mlp_adapter
+
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)
             for p in model.get_model().mm_projector.parameters():
@@ -1144,6 +1341,9 @@ def train(attn_implementation=None):
         model.config.mm_projector_lr = training_args.mm_projector_lr
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
+        model.config.mm_use_4_vision_tokens = model_args.mm_use_4_vision_tokens
+        model.config.vision_token_num = model_args.vision_token_num
+        model.config.vision_min_num = model_args.vision_min_num
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
 
     for name, param in model.named_parameters():
@@ -1163,9 +1363,9 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
-
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
+
     trainer = EagleTrainer(model=model,
                     tokenizer=tokenizer,
                     args=training_args,
@@ -1179,20 +1379,6 @@ def train(attn_implementation=None):
 
     model.config.use_cache = True
 
-    # if training_args.lora_enable:
-    #     state_dict = get_peft_state_maybe_zero_3(
-    #         model.named_parameters(), training_args.lora_bias
-    #     )
-    #     non_lora_state_dict = get_peft_state_non_lora_maybe_zero_3(
-    #         model.named_parameters()
-    #     )
-    #     if training_args.local_rank == 0 or training_args.local_rank == -1:
-    #         model.config.save_pretrained(training_args.output_dir)
-    #         model.save_pretrained(training_args.output_dir, state_dict=state_dict)
-    #         torch.save(non_lora_state_dict, os.path.join(training_args.output_dir, 'non_lora_trainables.bin'))
-    # else:
-    #     safe_save_model_for_hf_trainer(trainer=trainer,
-    #                                    output_dir=training_args.output_dir)
     safe_save_model_for_hf_trainer(trainer=trainer,
                                    output_dir=training_args.output_dir)
 

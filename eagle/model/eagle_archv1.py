@@ -42,21 +42,6 @@ from eagle.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_PATCH
 from eagle.mm_utils import get_anyres_image_grid_shape
 
 import math
-import warnings
-
-def load_filtered_state_dict(model, state_dict, keyword):
-    model_state_dict = model.state_dict()
-    new_state_dict = {}
-    for k, v in state_dict.items():
-        if keyword in k:
-            key = k.split(keyword + '.')[1]
-            if key in model_state_dict and model_state_dict[key].shape == v.shape:
-                new_state_dict[key] = v
-            else:
-                warnings.warn(f"Skipping {key} due to shape mismatch.")
-
-    model.load_state_dict(new_state_dict, strict=False)
-    return new_state_dict
 
 class EagleMetaModel:
 
@@ -88,6 +73,7 @@ class EagleMetaModel:
         mm_use_4_vision_tokens = model_args.mm_use_4_vision_tokens
         vision_token_num = model_args.vision_token_num
         vision_min_num = model_args.vision_min_num
+        
 
         self.config.mm_vision_tower = vision_tower
 
@@ -115,7 +101,6 @@ class EagleMetaModel:
         self.config.vision_token_num = vision_token_num
         self.config.vision_min_num = vision_min_num
 
-
         if getattr(self, 'mm_projector', None) is None:
             fpn_input_dim = [] if not hasattr(self.vision_tower, "fpn_input_dim") else self.vision_tower.fpn_input_dim
             self.mm_projector = build_vision_projector(self.config, fpn_input_dim=fpn_input_dim)
@@ -126,7 +111,14 @@ class EagleMetaModel:
                     torch.randn(self.config.hidden_size, dtype=self.dtype) * embed_std
                 )
         else:
-            # In case it is frozen by LoRA
+            old_state_dict = self.mm_projector.state_dict()
+            
+            fpn_input_dim = [] if not hasattr(self.vision_tower, "fpn_input_dim") else self.vision_tower.fpn_input_dim
+            new_mm_projector = build_vision_projector(self.config, fpn_input_dim=fpn_input_dim)
+            
+            new_mm_projector.load_state_dict(old_state_dict)
+            self.mm_projector = new_mm_projector
+            
             for p in self.mm_projector.parameters():
                 p.requires_grad = True
 
@@ -136,6 +128,7 @@ class EagleMetaModel:
                 return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
 
             self.mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
+
 
 def unpad_image(tensor, original_size):
     """
@@ -186,6 +179,7 @@ class EagleMetaForCausalLM(ABC):
 
     def reshape_2x2_image_features(self, image_features):
         B, P, D = image_features.shape
+        
         # Calculate the patch size
         patch_size = round(math.sqrt(P))
         
@@ -220,7 +214,7 @@ class EagleMetaForCausalLM(ABC):
     ):
         vision_tower = self.get_vision_tower()
         if vision_tower is None or images is None or input_ids.shape[1] == 1:
-            return input_ids, position_ids, attention_mask, past_key_values, None, labels
+            return input_ids, position_ids, attention_mask, past_key_values, None, labels, None, None
 
         if type(images) is list or images.ndim == 5:
             images = [image if len(image.shape) == 4 else image.unsqueeze(0) for image in images] # list [ [T, C, H, W], ]
@@ -280,15 +274,22 @@ class EagleMetaForCausalLM(ABC):
 
         new_input_embeds = []
         new_labels = []
+        # token types: 1: ignore tokens, 2: user input, 3: image token, 4: padded token
+        new_token_types = []
         cur_image_idx = 0
         for batch_idx, cur_input_ids in enumerate(input_ids):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
             if num_images == 0:
-                cur_image_features = image_features[cur_image_idx]
+                cur_image_features = image_features[cur_image_idx][0]
                 cur_input_embeds_1 = self.get_model().embed_tokens(cur_input_ids)
                 cur_input_embeds = torch.cat([cur_input_embeds_1, cur_image_features[0:0]], dim=0)
                 new_input_embeds.append(cur_input_embeds)
                 new_labels.append(labels[batch_idx])
+                # token types
+                cur_token_type = torch.full((cur_input_ids.shape[0],), 2, dtype=cur_input_ids[-1].dtype, device=cur_input_ids[-1].device) 
+                cur_token_type[labels[batch_idx] == IGNORE_INDEX] = 1 # token with ignore tokens are considered as user input 
+                new_token_types.append(cur_token_type)
+
                 cur_image_idx += 1
                 continue
 
@@ -296,37 +297,53 @@ class EagleMetaForCausalLM(ABC):
             cur_input_ids_noim = []
             cur_labels = labels[batch_idx]
             cur_labels_noim = []
+            cur_token_type_noim = []
             for i in range(len(image_token_indices) - 1):
                 cur_input_ids_noim.append(cur_input_ids[image_token_indices[i]+1:image_token_indices[i+1]])
                 cur_labels_noim.append(cur_labels[image_token_indices[i]+1:image_token_indices[i+1]])
+                # token types
+                cur_token = torch.full((cur_labels_noim[-1].shape[0],), 2, dtype=cur_input_ids_noim[-1].dtype, device=cur_input_ids_noim[-1].device) 
+                cur_token[cur_labels[image_token_indices[i]+1:image_token_indices[i+1]] == IGNORE_INDEX] = 1 # token with ignore tokens are considered as user input 
+                cur_token_type_noim.append(cur_token) 
+
             split_sizes = [x.shape[0] for x in cur_labels_noim]
             cur_input_embeds = self.get_model().embed_tokens(torch.cat(cur_input_ids_noim))
             cur_input_embeds_no_im = torch.split(cur_input_embeds, split_sizes, dim=0)
             cur_new_input_embeds = []
             cur_new_labels = []
-
+            cur_new_token_type = []
             for i in range(num_images + 1):
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
+                cur_new_token_type.append(cur_token_type_noim[i]) ## append token type
+
                 if i < num_images:
                     cur_image_features = image_features[cur_image_idx]
                     cur_image_idx += 1
                     cur_new_input_embeds.append(cur_image_features)
                     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    cur_new_token_type.append(torch.full((cur_image_features.shape[0],), 3, device=cur_labels.device, dtype=cur_labels.dtype)) ## insert image token type   
+
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]
 
             cur_new_input_embeds = torch.cat(cur_new_input_embeds)
             cur_new_labels = torch.cat(cur_new_labels)
+            cur_new_token_type = torch.cat(cur_new_token_type) ##
+
 
             new_input_embeds.append(cur_new_input_embeds)
             new_labels.append(cur_new_labels)
+            new_token_types.append(cur_new_token_type) ##
+
 
         # Truncate sequences to max length as image embeddings can make the sequence longer
         tokenizer_model_max_length = getattr(self.config, 'tokenizer_model_max_length', None)
         if tokenizer_model_max_length is not None:
             new_input_embeds = [x[:tokenizer_model_max_length] for x in new_input_embeds]
             new_labels = [x[:tokenizer_model_max_length] for x in new_labels]
+            new_token_types = [x[:tokenizer_model_max_length] for x in new_token_types]
+
 
         # Combine them
         max_len = max(x.shape[0] for x in new_input_embeds)
@@ -336,6 +353,8 @@ class EagleMetaForCausalLM(ABC):
         new_labels_padded = torch.full((batch_size, max_len), IGNORE_INDEX, dtype=new_labels[0].dtype, device=new_labels[0].device)
         attention_mask = torch.zeros((batch_size, max_len), dtype=attention_mask.dtype, device=attention_mask.device)
         position_ids = torch.zeros((batch_size, max_len), dtype=position_ids.dtype, device=position_ids.device)
+        new_token_types_padded = torch.full((batch_size, max_len), 4, dtype=new_labels[0].dtype, device=new_labels[0].device) ## NOT APPLICABLE token type
+
 
         for i, (cur_new_embed, cur_new_labels) in enumerate(zip(new_input_embeds, new_labels)):
             cur_len = cur_new_embed.shape[0]
@@ -348,6 +367,8 @@ class EagleMetaForCausalLM(ABC):
                     new_labels_padded[i, -cur_len:] = cur_new_labels
                     attention_mask[i, -cur_len:] = True
                     position_ids[i, -cur_len:] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    new_token_types_padded[i, -cur_len:] = new_token_types[i] ## 
+
             else:
                 new_input_embeds_padded.append(torch.cat((
                     cur_new_embed,
@@ -357,6 +378,8 @@ class EagleMetaForCausalLM(ABC):
                     new_labels_padded[i, :cur_len] = cur_new_labels
                     attention_mask[i, :cur_len] = True
                     position_ids[i, :cur_len] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    new_token_types_padded[i, :cur_len] = new_token_types[i] 
+
 
         new_input_embeds = torch.stack(new_input_embeds_padded, dim=0)
 
@@ -372,8 +395,9 @@ class EagleMetaForCausalLM(ABC):
 
         if _position_ids is None:
             position_ids = None
+        token_types = new_token_types_padded
 
-        return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
+        return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels, token_types
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
         if model_args.mm_use_im_patch_token:
