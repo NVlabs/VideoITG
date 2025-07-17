@@ -89,13 +89,13 @@ For VideoLLM training, wew use the same data and stragety as LLaVA-Video, includ
 
 
 ## Checkpoint Preparation
-We recommend using the VideoLLM checkpoints we provided [here]() to reproduce our results. The checkpoints  You can also retrain the VideoLLM using the VideoLLM data mentioned above.
+We recommend using the VideoLLM checkpoints we provided [here]() to reproduce our results.
 
 ## Training
 You can train the model following:
 
 ```bash
-tools/dist_train.sh sh scripts/videoitg/submit_job.sh scripts/videoitg/finetune-uni-64frame-qwen2-7b-grounding.sh finetune 16
+bash scripts/videoitg/finetune-uni-64frame-qwen2-7b-grounding.sh finetune 16
 ```
 
 In default we use 128 NVIDIA A100 80G GPU to conduct the training. Please modify the `per_device_train_batch_size` and `gradient_accumulation_steps` if you are using different amount of GPUs. The training for VideoITG requires 4 hours.
@@ -104,7 +104,6 @@ In default we use 128 NVIDIA A100 80G GPU to conduct the training. Please modify
 ### Notes
 If you have limited GPU resources or memory, please considering the following:
 
-- use `scripts/zero3.json` or `scripts/zero3_offload.json` as the Deepspeed training config instead of the default `zero2.json`
 - use gradient accumulation and reduce the per-device batch size
 
 ## Evaluation

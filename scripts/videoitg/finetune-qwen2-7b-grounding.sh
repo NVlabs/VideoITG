@@ -19,7 +19,7 @@ python -m torch.distributed.run \
     --model_name_or_path checkpoints-finetune/eagle-qwen2-7b-finetune-uni-ov-video-finetune-sftv1 \
     --version plain \
     --data_path /lustre/fs12/portfolios/llmservice/users/shihaow/valid_data/filtered_data_wonms.json \
-    --image_folder /lustre/fsw/portfolios/llmservice/projects/llmservice_nlp_fm/datasets/grounding/shimin/dataset/video/shihao/data/ \
+    --image_folder ./data/ \
     --vision_tower "google/siglip-so400m-patch14-384" \
     --mm_projector_type seq_mlp \
     --tune_mm_mlp_adapter False \
