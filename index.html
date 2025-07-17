@@ -63,6 +63,9 @@
               <a href="https://scholar.google.com.hk/citations?user=H2fJLqEAAAAJ&hl=zh-CN&oi=sra">Zhiqi Li</a><sup>2,3</sup>,
             </span>
             <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=LhdBgMAAAAAJ&hl=zh-CN&oi=ao">Minghan Li</a><sup>4</sup>,
+            </span>
+            <span class="author-block">
               <a href="https://scholar.google.com.hk/citations?user=zOQj6-gAAAAJ&hl=zh-CN&oi=ao">Guilin Liu</a><sup>2</sup>,
             </span>
             <span class="author-block">
@@ -79,7 +82,7 @@
           </div>
 
           <div class="organization">
-            <span class="author-block">The Hong Kong Polytechnic University<sup>1</sup>, NVIDIA<sup>2</sup>, Nanjing University<sup>3</sup></span>
+            <span class="author-block">The Hong Kong Polytechnic University<sup>1</sup>, NVIDIA<sup>2</sup>, Nanjing University<sup>3</sup>, Harvard University<sup>4</sup></span>
             <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
           </div>
 
@@ -114,6 +117,35 @@
                   </span>
                   <span>Code</span>
                   </a>
+              </span>
+              <span class="link-block">
+                <a href="https://huggingface.co/你的模型链接"
+                   class="external-link button is-normal is-rounded is-dark">
+                   <span class="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                      <line x1="9" y1="9" x2="9.01" y2="9"/>
+                      <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                  </span>
+                  <span>Model</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/你的数据集链接"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                      <line x1="9" y1="9" x2="9.01" y2="9"/>
+                      <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                  </span>
+                  <span>Dataset</span>
+                </a>
+              </span>
             </div>
           </div>
         </div>
@@ -133,7 +165,7 @@
                        alt="Interpolate start reference image."
                        style="width: 80%; height: auto;"/>
                   <p class="has-text-centered" style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                  <b>Figure 1: Illustration of Instructed Temporal Grounding for Videos (VideoITG) with different sampling strategies. </b> 
+                  <b>Figure 1: Overview of the VidThinker annotation pipeline for VideoITG. The pipeline consists of three stages that fully leverage the provided instructions: (1) segment-level clip captioning; (2) instruction-guided relevant clip retrieval; (3) fine-grained frame-level localization. </b> 
                   </p>
               </div>
       </div>
@@ -142,7 +174,7 @@
           <h2 class="title is-3">Abstract</h2>
           <div class="content has-text-justified">
             <p>
-              Recent studies reveal that selecting informative and relevant video frames can significantly improve the performance of Video Large Language Models (Video-LLMs). Current methods are mostly training-free approaches, such as reducing inter-frame redundancy, employing separate models for image-text relevance assessment, or utilizing temporal video grounding for event localization, whereas they struggle to address the complex scenarios of real-world video understanding. To address these challenges, we propose <b>I</b>nstructed <b>T</b>emporal <b>G</b>rounding for <b>Videos</b>, namely <b>VideoITG</b>, which features customized sampling aligned with user instructions. We first develop an automated data annotation pipeline that consists of three steps: detailed clip-level description generation, question-guided clip retrieval, and task-specific frame selection. With this pipeline, we create a VideoITG dataset containing 40K videos and 500K instruction-dependent key frame selection annotations. We then design a plug-and-play VideoITG model, which takes advantage of visual language alignment and reasoning capabilities of Video-LLMs, for effective video frame selection in a discriminative manner. Coupling with current Video-LLMs, VideoITG achieves consistent performance improvements across multiple multimodal video understanding benchmarks, showing its superiority and great potentials for video understanding. Data, model and code will be made publicly available.
+              Recent studies have revealed that selecting informative and relevant video frames can significantly improve the performance of Video Large Language Models (Video-LLMs). Current methods, such as reducing inter-frame redundancy, employing separate models for image-text relevance assessment, or utilizing temporal video grounding for event localization, are mostly training-free approaches, whereas they struggle to address the complex scenarios in long video understanding. We propose Instructed Temporal Grounding for Videos (VideoITG), featuring customized frame sampling aligned with user instructions. The core of VideoITG is the VidThinker pipeline, an automated annotation framework that explicitly mimics the human annotation process. First, it generates detailed clip-level captions conditioned on the instruction; then, it retrieves relevant video segments through instruction-guided reasoning; finally, it performs fine-grained frame selection to pinpoint the most informative visual evidence. Leveraging VidThinker, we construct the VideoITG-40K dataset, containing 40K videos and 500K instructed temporal grounding annotations. We then design a plug-and-play VideoITG model, which takes advantage of visual language alignment and reasoning capabilities of Video-LLMs, for effective frame selection in a discriminative manner. Coupled with Video-LLMs, VideoITG achieves consistent performance improvements across multiple multimodal video understanding benchmarks, showing its superiority and great potentials for video understanding.
             </p>
           </div>
         </div>
@@ -166,7 +198,7 @@
                    alt="Interpolate start reference image."
                    style="transform: scale(0.9);"/>
               <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
-                <b>Figure 2: We apply a coarse-to-fine strategy for selecting informative frames for long videos. The whole process includes clip-level detailed description, question-guided clip retrieval and task-specific frame selection. </b>
+                <b>Figure 2: Illustration of four instruction types and their corresponding frame selection strategies in VidThinker. For semantic-focused instructions, the system selects diverse frames capturing key visual clues. For motion-focused instructions, frames are uniformly sampled to capture dynamic changes. When both semantic and motion cues are required, a hybrid sampling strategy is applied. For vague or open-ended instructions, the system samples a minimal yet diverse set of frames across the video for holistic coverage. </b>
               </p>
           </div>
           <!--/ Interpolating. -->
@@ -191,7 +223,7 @@
                    alt="Interpolate start reference image."
                    style="transform: scale(0.95);"/>
               <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
-                <b>Figure 3: Model design on VideoITG-40K dataset: (a) Text generation aligns video and language tokens for sequential predictions; (b) Classification with causal attention utilizes anchor tokens for temporal cue management; (c) Classification with full attention facilitates interaction across visual and text tokens without anchors.</b>
+                <b>Figure 3: VideoITG model design}: (a) Text generation aligns video and language tokens for sequential predictions. (b) Classification with causal attention utilizes anchor tokens for temporal cue management. (c) Classification with full attention facilitates interaction across visual and text tokens without anchors.</b>
               </p>
           </div>
           <!--/ Interpolating. -->
