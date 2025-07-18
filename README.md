@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/VideoITG-000000?style=for-the-badge&logo=github&logoColor=000&logoColor=whit" alt="WebPage">
   </a>
   <a href="https://huggingface.co/datasets/NVEagle/VideoITG-40K">
-    <img src="https://img.shields.io/badge/VideoITG-40K-fcd022?style=for-the-badge&logo=huggingface&logoColor=000" alt="Dataset">
+    <img src="https://img.shields.io/badge/VideoITG40K-fcd022?style=for-the-badge&logo=huggingface&logoColor=000" alt="Dataset">
   </a>
 </div>
 
