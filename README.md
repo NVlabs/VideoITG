@@ -22,7 +22,7 @@ VideoITG is an innovative approach to video understanding, designed to enhance t
 
 
 ## Updates
-- [2025/07/25(ETA)] Code and checkpoint release. 
+- [2025/07/25 (ETA)] Code and checkpoint release. 
 - [2025/07/18] Technical report release. [[arXiv](https://arxiv.org/abs/2507.13353)]
 
 
@@ -124,7 +124,14 @@ In our paper, we report the results of CG-Bench mini, which includes 3,000 QA pa
 ## Citation
 If you find this project useful, please cite our work:
 ```
-@article{
+@misc{wang2025videoitgmultimodalvideounderstanding,
+      title={VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding}, 
+      author={Shihao Wang and Guo Chen and De-an Huang and Zhiqi Li and Minghan Li and Guilin Li and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
+      year={2025},
+      eprint={2507.13353},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2507.13353}, 
 }
 ```
 
