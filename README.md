@@ -4,7 +4,7 @@
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
 [![Model License](https://img.shields.io/badge/MODEL%20License-CC%20By%20NC%204.0-red.svg)](MODEL_LICENSE)
-<a href='https://github.com/exiawsh/VideoITG-PAGE'><img src='https://img.shields.io/badge/Project-Page-Green'></a>
+<a href='https://nvlabs.github.io/VideoITG'><img src='https://img.shields.io/badge/Project-Page-Green'></a>
 
 [arXiv](https://arxiv.org/abs/2507.13353)
 [dataset](https://huggingface.co/datasets/NVEagle/VideoITG-40K)
