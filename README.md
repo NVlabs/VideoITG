@@ -5,8 +5,11 @@
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
 [![Model License](https://img.shields.io/badge/MODEL%20License-CC%20By%20NC%204.0-red.svg)](MODEL_LICENSE)
 
-[arXiv](https://arxiv.org/abs/2507.13353)
-[dataset](https://huggingface.co/datasets/NVEagle/VideoITG-40K)
+
+
+
+
+## Introduction
 
 <div align="center">
   <a href="https://arxiv.org/abs/2507.13353">
@@ -19,9 +22,6 @@
     <img src="https://img.shields.io/badge/OpenThinkIMG_Collection-fcd022?style=for-the-badge&logo=huggingface&logoColor=000" alt="Dataset">
   </a>
 </div>
-
-
-## Introduction
 
 <div align="center">
 <img src="assets/teaser.png" width="90%">
