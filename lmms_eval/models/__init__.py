@@ -56,8 +56,7 @@ AVAILABLE_MODELS = {
     "llama_vision": "LlamaVision",
     "aria": "Aria",
     "ross": "Ross",
-    "eagle_grounding": "Eagle_grounding",
-    "eagle_vid": "Eagle_vid",
+    "videoitg": "VideoITG",
 }
 
 
