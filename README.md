@@ -1,4 +1,4 @@
-# VideoITG: Improving Multimodal Video Understanding with Instructed Temporal Grounding
+# VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding
 
 ---
 
@@ -95,14 +95,14 @@ pip install flash-attn==2.4.2.dev3 --no-build-isolation
 ## Training Data
 
 ### VideoLLM Data
-For VideoLLM training, wew use the same data and stragety as LLaVA-Video, including the [Pretraining Data](https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K), [OV SFT Data](https://huggingface.co/datasets/lmms-lab/LLaVA-OneVision-Data) and [LLaVA-Video-178K Data](https://huggingface.co/datasets/lmms-lab/LLaVA-Video-178K).
+For VideoLLM training, wew use the same data and stragety as LLaVA-Video, including the [Pretraining Data](https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K), [OV SFT Data](https://huggingface.co/datasets/lmms-lab/LLaVA-OneVision-Data) and [LLaVA-Video Data](https://huggingface.co/datasets/lmms-lab/LLaVA-Video-178K).
 
 
 ### VideoITG Data
 
 
 ## Checkpoint Preparation
-We recommend using the VideoLLM checkpoints we provided [here]() to reproduce our results.
+We recommend using the VideoLLM checkpoints we provided [here](https://huggingface.co/nvidia/VideoITG-8B) to reproduce our results.
 
 ## Training
 You can train the model following:
