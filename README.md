@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 3. Install additional packages for training cases
 ```bash
-pip install flash-attn==2.4.2.dev3 --no-build-isolation
+pip install flash-attn==2.4.2 --no-build-isolation
 ```
 
 ## Training Data
