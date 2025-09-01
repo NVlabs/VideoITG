@@ -16,9 +16,9 @@ python -m torch.distributed.run \
     --master_addr $MASTER_ADDR --master_port 25031 \
     train_itg_mem.py \
     --deepspeed ./scripts/zero1.json \
-    --model_name_or_path checkpoints-finetune/eagle-qwen2-7b-finetune-uni-ov-video-finetune-sftv1 \
+    --model_name_or_path exiawsh/eagle-qwen2-7b-finetune-uni-ov-video-finetune-sftv1 \
     --version plain \
-    --data_path /lustre/fs12/portfolios/llmservice/users/shihaow/valid_data/filtered_data_wonms.json \
+    --data_path ./data/video_itg_data.json \
     --image_folder ./data/ \
     --vision_tower "google/siglip-so400m-patch14-384" \
     --mm_projector_type seq_mlp \

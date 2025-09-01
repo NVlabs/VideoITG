@@ -18,8 +18,8 @@ python -m torch.distributed.run \
     --deepspeed ./scripts/zero1.json \
     --model_name_or_path Qwen/Qwen2-7B-Instruct \
     --version qwen_1_5 \
-    --data_path /lustre/fsw/portfolios/llmservice/projects/llmservice_nlp_fm/datasets/grounding/shimin/dataset/llava-one-vision-sampled/llava-ov-image-merge.json \
-    --image_folder /lustre/fsw/portfolios/llmservice/projects/llmservice_nlp_fm/datasets/grounding/shimin/dataset/llava-one-vision-sampled/ \
+    --data_path llava-one-vision-sampled/llava-ov-image-merge.json \
+    --image_folder dataset/llava-one-vision-sampled/ \
     --vision_tower "google/siglip-so400m-patch14-384" \
     --pretrain_mm_mlp_adapter ./checkpoints-pretrain/eagle-qwen2-7b-pretrain/mm_projector.bin \
     --mm_projector_type patch_mergerv2 \
@@ -55,18 +55,3 @@ python -m torch.distributed.run \
     --run_name ${NAME}
 
 
-
-# 2025-01-25 22:13:40.110 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: short:  76.9%
-# 2025-01-25 22:13:40.111 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: medium:  60.7%
-# 2025-01-25 22:13:40.111 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: long:  52.2%
-# | Tasks  |Version|Filter|n-shot|         Metric          |   | Value |   |Stderr|
-# |--------|-------|------|-----:|-------------------------|---|------:|---|------|
-# |videomme|Yaml   |none  |     0|videomme_perception_score|↑  |63.2593|±  |   N/A|
-
-
-# 2025-01-25 23:27:58.092 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: short:  76.9%
-# 2025-01-25 23:27:58.093 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: medium:  61.2%
-# 2025-01-25 23:27:58.093 | INFO     | utils:videomme_aggregate_results:314 - Evaluation on video Type: long:  52.2%
-# | Tasks  |Version|Filter|n-shot|         Metric          |   | Value |   |Stderr|
-# |--------|-------|------|-----:|-------------------------|---|------:|---|------|
-# |videomme|Yaml   |none  |     0|videomme_perception_score|↑  |63.4444|±  |   N/A|

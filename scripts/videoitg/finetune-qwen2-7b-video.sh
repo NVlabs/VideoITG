@@ -16,10 +16,10 @@ python -m torch.distributed.run \
     --master_addr $MASTER_ADDR --master_port 25031 \
     train_mem.py \
     --deepspeed ./scripts/zero2.json \
-    --model_name_or_path /lustre/fs12/portfolios/llmservice/users/shihaow/dev/temporal_grounding/checkpoints-finetune/eagle-qwen2-7b-finetune-uni-ov-pretrain \
+    --model_name_or_path ./checkpoints-finetune/eagle-qwen2-7b-finetune-uni-ov-pretrain \
     --version qwen_1_5 \
     --data_path /lustre/fs12/portfolios/llmservice/users/shihaow/all_llava_video_samples_merged_mc_oe.json \
-    --image_folder /lustre/fsw/portfolios/llmservice/projects/llmservice_nlp_fm/datasets/grounding/shimin/dataset/video/shihao/data/ \
+    --image_folder ./dataset/video/shihao/data/ \
     --vision_tower "google/siglip-so400m-patch14-384" \
     --mm_projector_type patch_mergerv2 \
     --tune_mm_mlp_adapter False \
@@ -52,19 +52,3 @@ python -m torch.distributed.run \
     --lazy_preprocess True \
     --report_to none \
     --run_name ${NAME}
-
-
-# 2024-12-05 02:16:30.012 | INFO     | utils:videomme_aggregate_results:478 - Evaluation on video Type: short:  72.8%     
-# 2024-12-05 02:16:30.013 | INFO     | utils:videomme_aggregate_results:478 - Evaluation on video Type: medium:  55.0%     
-# 2024-12-05 02:16:30.013 | INFO     | utils:videomme_aggregate_results:478 - Evaluation on video Type: long:  48.8% 
-# | Tasks  |Version|Filter|n-shot|         Metric         | Value |   |Stderr|
-# |--------|-------|------|-----:|------------------------|------:|---|------|
-# |videomme|Yaml   |none  |     0|videomme_percetion_score|58.8519|±  |N/A   |
-
-
-# 2025-01-26 18:20:05.627 | INFO     | utils:videomme_aggregate_results:315 - Evaluation on video Type: short:  75.1%
-# 2025-01-26 18:20:05.628 | INFO     | utils:videomme_aggregate_results:315 - Evaluation on video Type: medium:  61.6%
-# 2025-01-26 18:20:05.628 | INFO     | utils:videomme_aggregate_results:315 - Evaluation on video Type: long:  53.4%
-# | Tasks  |Version|Filter|n-shot|         Metric          |   | Value |   |Stderr|
-# |--------|-------|------|-----:|-------------------------|---|------:|---|------|
-# |videomme|Yaml   |none  |     0|videomme_perception_score|↑  |63.3704|±  |   N/A|
