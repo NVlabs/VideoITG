@@ -94,7 +94,7 @@ def save_selected_frames(video_path, selected_indices, save_dir="./vis"):
 
 def main():
     prompt = "Which IMAX movie isn't in the video? A. The Hunger Games: B. Catching Fire; C. The Dark Knight; D. Oppenheimer; E. Dune \n Please respond with only the letter of the correct answer."
-    video_path = "/lustre/fs12/portfolios/llmservice/users/shihaow/dev/demo/assets/imax.mp4"
+    video_path = "./assets/imax.mp4"
     num_topk = 32
     selected_indices = topk_selection(prompt, video_path, num_topk)
     print(selected_indices)
