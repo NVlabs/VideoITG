@@ -61,7 +61,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
     if use_flash_attn:
         kwargs['attn_implementation'] = 'flash_attention_2'
 
-    if 'eagle' in model_name.lower():
+    if ('eagle' in model_name.lower()) or ('videoitg' in model_name.lower()):
         if 'lora' in model_name.lower() and model_base is None:
             warnings.warn('There is `lora` in model name but no `model_base` is provided. If you are loading a LoRA model, please provide the `model_base` argument. Detailed instruction: https://github.com/haotian-liu/LLaVA#launch-a-model-worker-lora-weights-unmerged.')
         if 'lora' in model_name.lower() and model_base is not None:
@@ -114,7 +114,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             if "grounding_causal" in model_name.lower():
                 tokenizer = AutoTokenizer.from_pretrained(model_path)
                 model = EagleQwenGv2.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
-            elif "grounding" in model_name.lower() or "videoitg" in model_name.lower():
+            elif "grounding" or "videoitg" in model_name.lower():
                 tokenizer = AutoTokenizer.from_pretrained(model_path)
                 model = EagleQwenG.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
             elif "qwen" in model_name.lower():
@@ -151,8 +151,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             # model = AutoModelForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
 
     image_processor = None
-
-    if 'eagle' in model_name.lower():
+    if ('eagle' in model_name.lower()) or ('videoitg' in model_name.lower()):
         mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
         mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
         if mm_use_im_patch_token:
@@ -167,6 +166,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
         if device_map != 'auto':
             vision_tower.to(device=device_map, dtype=torch.float16)
         image_processor = vision_tower.image_processor
+        print("image_processor", image_processor)
 
     if hasattr(model.config, "max_sequence_length"):
         context_len = model.config.max_sequence_length
