@@ -57,6 +57,7 @@ AVAILABLE_MODELS = {
     "aria": "Aria",
     "ross": "Ross",
     "videoitg": "VideoITG",
+    "eagle2_5": "Eagle2_5",
 }
 
 
