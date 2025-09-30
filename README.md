@@ -32,7 +32,8 @@ VideoITG is an innovative approach to video understanding, designed to enhance t
 
 
 ## Updates
-- [2025/07/25 (ETA)] Code and checkpoint release. 
+- [2025/09/30] The results of VideoITG on cgbench/mlvu/longvideobench/videomme release. See [results](results/) for released JSONL files.
+- [2025/07/25] Code and checkpoint release. 
 - [2025/07/18] Technical report release. [[arXiv](https://arxiv.org/abs/2507.13353)]
 
 
