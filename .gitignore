@@ -9,7 +9,6 @@ dist
 *.log.*
 logs/
 # *.json
-*.jsonl
 images/*
 
 # Data
