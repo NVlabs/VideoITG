@@ -1,37 +1,12 @@
-# Copyright 2025 NVIDIA CORPORATION & AFFILIATES
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# Adopted from lmms-eval from https://github.com/EvolvingLMMs-Lab/lmms-eval. Below is the original copyright:
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
 import copy
 import json
 import logging
 import math
+import os
 import re
 import warnings
 from datetime import timedelta
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import PIL
@@ -111,17 +86,44 @@ class Llava_OneVision(lmms):
         mm_spatial_pool_mode: Optional[str] = "bilinear",
         token_strategy: Optional[str] = "single",  # could be "single" or "multiple", "multiple" denotes adding multiple <image> tokens for each frame
         video_decode_backend: str = "decord",
-        grounding_folder: str = None,
+        frame_indices_jsonl: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__()
         # Do not use kwargs for now
         assert kwargs == {}, f"Unexpected kwargs: {kwargs}"
-        if grounding_folder:
-            with open(grounding_folder, 'r') as f:
-                self.grounding_files = json.load(f)
-        else:
-            self.grounding_files = None
+        self.docid_to_indices: Dict[int, List[int]] = {}
+        
+        # Optionally load precomputed frame indices from a JSONL file
+        if frame_indices_jsonl is not None and os.path.isfile(frame_indices_jsonl):
+            try:
+                with open(frame_indices_jsonl, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_no, line in enumerate(f, start=1):
+                        stripped = line.strip()
+                        if not stripped:
+                            # Skip empty/whitespace-only lines
+                            continue
+                        try:
+                            record = json.loads(stripped)
+                        except json.JSONDecodeError as e:
+                            eval_logger.warning(f"Failed to parse JSON at {frame_indices_jsonl}:{line_no}: {e}")
+                            continue
+                        if 'doc_id' in record and 'index' in record and isinstance(record['index'], list):
+                            try:
+                                did = int(record['doc_id'])
+                                idx_list = [int(x) for x in record['index']]
+                                # If multiple entries per doc_id exist, keep the first seen
+                                if did not in self.docid_to_indices:
+                                    self.docid_to_indices[did] = idx_list
+                            except Exception as e:
+                                eval_logger.warning(f"Failed to load frame indices record at {frame_indices_jsonl}:{line_no}: {e}")
+                                continue
+                if self.docid_to_indices:
+                    eval_logger.info(f"Loaded frame indices for {len(self.docid_to_indices)} doc_ids from {frame_indices_jsonl}")
+                else:
+                    eval_logger.warning(f"No valid frame indices loaded from {frame_indices_jsonl}")
+            except Exception as e:
+                eval_logger.warning(f"Failed to load frame indices jsonl {frame_indices_jsonl}: {e}")
         accelerator_kwargs = InitProcessGroupKwargs(timeout=timedelta(weeks=52))
         accelerator = Accelerator(kwargs_handlers=[accelerator_kwargs])
         if accelerator.num_processes > 1:
@@ -324,7 +326,7 @@ class Llava_OneVision(lmms):
                     image_tensor = []
                     try:
                         if self.video_decode_backend == "decord":
-                            frames = self.load_video(visual, self.max_frames_num)
+                            frames = self.load_video(visual, self.max_frames_num, doc_id)
                         elif self.video_decode_backend == "pyav":
                             frames = read_video_pyav(visual[0], num_frm=self.max_frames_num)
                         frames = self._image_processor.preprocess(frames, return_tensors="pt")["pixel_values"].half().cuda()
@@ -407,13 +409,44 @@ class Llava_OneVision(lmms):
             vr = VideoReader(video_path, ctx=cpu(0))
         else:
             vr = VideoReader(video_path[0], ctx=cpu(0))
-        if self.grounding_files and doc_id:
-            frame_idx = self.grounding_files[str(doc_id)]
-            frame_idx.sort()
+        
+        # Prefer JSONL-provided indices per doc_id when available
+        if self.docid_to_indices and doc_id is not None:
+            use_indices = self.docid_to_indices.get(int(doc_id))
+            if use_indices is not None and isinstance(use_indices, list) and len(use_indices) > 0:
+                # Sanitize indices: ensure they are valid and within video bounds
+                # 先采样前max_frames_num帧（顺序保留），再排序
+                total_frame_num = len(vr)
+                sanitized = []
+                count = 0
+                for idx in use_indices:
+                    if isinstance(idx, (int, np.integer)):
+                        ii = int(idx)
+                        if 0 <= ii < total_frame_num:
+                            sanitized.append(ii)
+                            count += 1
+                        if count >= max_frames_num:
+                            break
+                if len(sanitized) > 0:
+                    sanitized = sorted(list(set(sanitized)))  # Remove duplicates and sort
+                    frame_idx = sanitized
+                    print(f"Using frame indices for doc_id {doc_id}: {frame_idx}")
+                else:
+                    # Fallback to uniform sampling if no valid indices
+                    total_frame_num = len(vr)
+                    uniform_sampled_frames = np.linspace(0, total_frame_num - 1, max_frames_num, dtype=int)
+                    frame_idx = uniform_sampled_frames.tolist()
+            else:
+                # Fallback to uniform sampling if doc_id not found
+                total_frame_num = len(vr)
+                uniform_sampled_frames = np.linspace(0, total_frame_num - 1, max_frames_num, dtype=int)
+                frame_idx = uniform_sampled_frames.tolist()
         else:
+            # Fallback to uniform sampling if no JSONL file provided
             total_frame_num = len(vr)
             uniform_sampled_frames = np.linspace(0, total_frame_num - 1, max_frames_num, dtype=int)
             frame_idx = uniform_sampled_frames.tolist()
+        
         spare_frames = vr.get_batch(frame_idx).asnumpy()
         return spare_frames  # (frames, height, width, channels)
 
@@ -667,7 +700,7 @@ class Llava_OneVision(lmms):
                     if batched_terminal_singal[0]:  # terminal signal from doc_to_text function
                         break
 
-                for visual, context in zip(batched_visuals, batched_contexts):
+                for visual, context, doc_id in zip(batched_visuals, batched_contexts, batched_doc_id):
                     if origin_image_aspect_ratio is not None and self._config.image_aspect_ratio != origin_image_aspect_ratio:
                         self._config.image_aspect_ratio = origin_image_aspect_ratio
                         eval_logger.info(f"Resetting image aspect ratio to {origin_image_aspect_ratio}")
@@ -711,7 +744,7 @@ class Llava_OneVision(lmms):
                             image_tensor = []
                             try:
                                 if self.video_decode_backend == "decord":
-                                    frames = self.load_video(visual, self.max_frames_num)
+                                    frames = self.load_video(visual, self.max_frames_num, doc_id)
                                 elif self.video_decode_backend == "pyav":
                                     frames = read_video_pyav(visual[0], num_frm=self.max_frames_num)
                                 frames = self._image_processor.preprocess(frames, return_tensors="pt")["pixel_values"].half().cuda()

@@ -4,7 +4,7 @@ python3 -m accelerate.commands.launch \
         --num_processes=8 \
         -m lmms_eval \
         --model internvl2 \
-        --model_args grounding_files='grounding_videomme.json',pretrained=OpenGVLab/InternVL2_5-8B,modality=video \
+        --model_args frame_indices_jsonl=results\videomme_result_512.jsonl,pretrained=OpenGVLab/InternVL2_5-8B,modality=video \
         --tasks videomme \
         --batch_size 1 \
         --log_samples \

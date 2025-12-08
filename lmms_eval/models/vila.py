@@ -1,16 +1,3 @@
-# Adopted from lmms-eval from https://github.com/EvolvingLMMs-Lab/lmms-eval. Below is the original copyright:
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
 import argparse
 import json
 import logging
@@ -34,26 +21,22 @@ from lmms_eval.api.model import lmms
 from lmms_eval.api.registry import register_model
 
 eval_logger = logging.getLogger("lmms-eval")
-# import sys;sys.path.append("llava-video")
-try:
-    from llava.constants import (
-        DEFAULT_IM_END_TOKEN,
-        DEFAULT_IM_START_TOKEN,
-        DEFAULT_IMAGE_TOKEN,
-        IMAGE_TOKEN_INDEX,
-    )
-    from llava.conversation import SeparatorStyle, conv_templates
-    from llava.data.dataset import LazySupervisedDataset
-    from llava.mm_utils import (
-        KeywordsStoppingCriteria,
-        get_model_name_from_path,
-        process_images,
-        tokenizer_image_token,
-    )
-    from llava.model.builder import load_pretrained_model
-    from llava.utils import disable_torch_init
-except ImportError as e:
-    eval_logger.debug(f"VILA is not installed. Please install VILA to use this model. Error: {e}")
+# import sys;sys.path.append("/lustre/fs12/portfolios/llmservice/users/shihaow/VideoITG")
+from llava.constants import (
+    DEFAULT_IM_END_TOKEN,
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IMAGE_TOKEN,
+    IMAGE_TOKEN_INDEX,
+)
+from llava.conversation import SeparatorStyle, conv_templates
+from llava.mm_utils import (
+    KeywordsStoppingCriteria,
+    get_model_name_from_path,
+    process_images,
+    tokenizer_image_token,
+)
+from llava.model.builder import load_pretrained_model
+
 
 
 @register_model("vila")
@@ -253,14 +236,14 @@ class VILA(lmms):
             conv.append_message(conv.roles[1], None)
             prompt = conv.get_prompt()
 
-            contxt_id = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(self.device)
+            contxt_id = tokenizer_image_token(prompt, self.tokenizer, return_tensors="pt").unsqueeze(0).to(self.device)
 
             conv = conv_templates[self.conv_template].copy()
             conv.append_message(conv.roles[0], qs)
             conv.append_message(conv.roles[1], continuation)
             prompt = conv.get_prompt()
 
-            input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
+            input_ids = tokenizer_image_token(prompt, self.tokenizer, return_tensors="pt").unsqueeze(0).cuda()
             attention_masks = input_ids.ne(self.tokenizer.pad_token_id).long().cuda()
 
             labels = input_ids.clone()
@@ -330,7 +313,7 @@ class VILA(lmms):
             conv.append_message(conv.roles[1], None)
             prompt = conv.get_prompt()
 
-            input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
+            input_ids = tokenizer_image_token(prompt, self.tokenizer, return_tensors="pt").unsqueeze(0).cuda()
             pad_token_ids = self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id
             # if "llama_3" in self.conv_template:
             #     pad_token_ids = 0  # lmms-lab/llama3-llava-8b is trained on this pad token id. You may need to customize this for other models.

@@ -23,6 +23,7 @@ AVAILABLE_MODELS = {
     "instructblip": "InstructBLIP",
     "internvl": "InternVLChat",
     "internvl2": "InternVL2",
+    "internvl3_5": "InternVL3_5",
     "llama_vid": "LLaMAVid",
     "llava": "Llava",
     "llava_hf": "LlavaHf",
@@ -58,6 +59,7 @@ AVAILABLE_MODELS = {
     "ross": "Ross",
     "videoitg": "VideoITG",
     "eagle2_5": "Eagle2_5",
+    "gpt4o": "GPT4o",
 }
 
 

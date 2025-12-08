@@ -1,31 +1,5 @@
-# Copyright 2025 NVIDIA CORPORATION & AFFILIATES
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# Adopted from lmms-eval from https://github.com/EvolvingLMMs-Lab/lmms-eval. Below is the original copyright:
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Optional
 
 import numpy as np
 import torch
@@ -36,6 +10,7 @@ from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer, AutoConfig
+import os
 
 from lmms_eval.api.instance import Instance
 from lmms_eval.api.model import lmms
@@ -127,17 +102,24 @@ def get_index(bound, fps, max_frame, first_idx=0, num_segments=32):
     return frame_indices
 
 
-def load_video(video_path, bound=None, input_size=448, max_num=1, num_segments=32, doc_id=None, grounding_files=None):
+def load_video(video_path, bound=None, input_size=448, max_num=1, num_segments=32, doc_id=None, docid_to_indices: Optional[Dict[int, List[int]]] = None):
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=4)
     max_frame = len(vr) - 1
     fps = float(vr.get_avg_fps())
 
     pixel_values_list, num_patches_list = [], []
     transform = build_transform(input_size=input_size)
-    if grounding_files and doc_id:
-        frame_indices = grounding_files[str(doc_id)]
-        frame_indices.sort()
-    else:
+    # 优先使用 JSONL 提供的帧索引
+    frame_indices = None
+    if docid_to_indices is not None and doc_id is not None:
+        try:
+            did = int(doc_id)
+            if did in docid_to_indices and isinstance(docid_to_indices[did], list) and len(docid_to_indices[did]) > 0:
+                frame_indices = sorted(int(i) for i in docid_to_indices[did][:num_segments] if isinstance(i, (int, np.integer)))
+        except Exception as e:
+            eval_logger.warning(f"Failed to use frame indices from jsonl for doc_id={doc_id}: {e}")
+    # 回退到均匀采样
+    if frame_indices is None or len(frame_indices) == 0:
         frame_indices = get_index(bound, fps, max_frame, first_idx=0, num_segments=num_segments)
     for frame_index in frame_indices:
         img = Image.fromarray(vr[frame_index].asnumpy()).convert("RGB")
@@ -211,15 +193,45 @@ class InternVL2(lmms):
         num_frame: int = 32,
         grounding_files: str = None,
         num_layers=None,
+        frame_indices_jsonl: Optional[str] = None,
         **kwargs,
     ):
         super().__init__()
 
-        if grounding_files:
-            with open(grounding_files, 'r') as f:
-                self.grounding_files = json.load(f)
+        # 不再使用 grounding_files
+
+        # 可选：加载 frame_indices_jsonl（JSONL，每行包含 {"doc_id": int, "index": [int, ...]}）
+        self.docid_to_indices: Dict[int, List[int]] = {}
+        if frame_indices_jsonl is not None and os.path.isfile(frame_indices_jsonl):
+            try:
+                with open(frame_indices_jsonl, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line_no, line in enumerate(f, start=1):
+                        stripped = line.strip()
+                        if not stripped:
+                            continue
+                        try:
+                            record = json.loads(stripped)
+                        except json.JSONDecodeError as e:
+                            eval_logger.warning(f"Failed to parse JSON at {frame_indices_jsonl}:{line_no}: {e}")
+                            continue
+                        if 'doc_id' in record and 'index' in record and isinstance(record['index'], list):
+                            try:
+                                did = int(record['doc_id'])
+                                idx_list = [int(x) for x in record['index']]
+                                if did not in self.docid_to_indices:
+                                    self.docid_to_indices[did] = idx_list
+                            except Exception as e:
+                                eval_logger.warning(f"Failed to load frame indices record at {frame_indices_jsonl}:{line_no}: {e}")
+                                continue
+                if self.docid_to_indices:
+                    eval_logger.info(f"Loaded frame indices for {len(self.docid_to_indices)} doc_ids from {frame_indices_jsonl}")
+                else:
+                    eval_logger.warning(f"No valid frame indices loaded from {frame_indices_jsonl}")
+            except Exception as e:
+                eval_logger.warning(f"Failed to load frame indices jsonl {frame_indices_jsonl}: {e}")
         else:
-            self.grounding_files = None
+            if frame_indices_jsonl is not None:
+                eval_logger.warning(f"frame_indices_jsonl not found or not a file: {frame_indices_jsonl}")
 
         self.path = pretrained
         self.num_frame = num_frame
@@ -366,7 +378,12 @@ class InternVL2(lmms):
                         video_prefix += f"Frame{frame_count+1}: <image>\n"
                         frame_count += 1
                     else:  # 视频文件
-                        pixel_values, patches = load_video(visual, num_segments=self.num_frame, doc_id=doc_id, grounding_files=self.grounding_files)
+                        pixel_values, patches = load_video(
+                            visual,
+                            num_segments=self.num_frame,
+                            doc_id=doc_id,
+                            docid_to_indices=self.docid_to_indices if hasattr(self, 'docid_to_indices') else None,
+                        )
                         pixel_values_list.append(pixel_values)
                         num_patches_list.extend(patches)
                         video_prefix += "".join([f"Frame{i+frame_count+1}: <image>\n" for i in range(len(patches))])
