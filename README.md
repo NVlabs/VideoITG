@@ -131,6 +131,8 @@ bash scripts/eval_lmms_eval/videomme_grounding.sh $REPO_ID_OR_LOCAL_PATH $MODEL_
 ### Notes
 In our paper, we report the results of CG-Bench mini, which includes 3,000 QA pairs.
 
+If you want to evaluate Eagle2.5, please update transformers to 4.55.4.
+
 ## Citation
 If you find this project useful, please cite our work:
 ```
