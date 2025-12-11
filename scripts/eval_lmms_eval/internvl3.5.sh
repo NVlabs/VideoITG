@@ -4,7 +4,7 @@ python3 -m accelerate.commands.launch \
         --num_processes=8 \
         -m lmms_eval \
         --model internvl3_5 \
-        --model_args pretrained=OpenGVLab/InternVL3_5-8B,modality=video,frame_indices_jsonl=results/videomme_result_512.jsonl \
+        --model_args pretrained=OpenGVLab/InternVL3_5-8B,modality=video,frame_indices_jsonl=results/videomme_result_512.jsonl,num_frame=32 \
         --tasks videomme \
         --batch_size 1 \
         --log_samples \
