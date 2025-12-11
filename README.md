@@ -128,6 +128,14 @@ First, using this command to run our VideoITG model and get the instructed groun
 ```bash
 bash scripts/eval_lmms_eval/videomme_grounding.sh $REPO_ID_OR_LOCAL_PATH $MODEL_NAME $CONV_MODE
 ```
+
+After running this command, a .jsonl file containing the scores for each frame will be generated in the output directory output_dir=./videomme_result_512. We will select $K$ frames from these files to be used for inference with the downstream VLM.
+
+Taking the InternVL2.5 model as an example, run the following command:
+```bash
+bash scripts/eval_lmms_eval/internvl2.5.sh
+```
+Before running the script, you first need to fill in the path of the .jsonl file generated in the output_dir into the frame_indices_jsonl variable. Then, set num_frame according to your specific needs; for instance, if you want to select the top 32 frames, set num_frame to 32 in the script.
 ### Notes
 In our paper, we report the results of CG-Bench mini, which includes 3,000 QA pairs.
 
