@@ -4,7 +4,7 @@ python3 -m accelerate.commands.launch \
         --num_processes=8 \
         -m lmms_eval \
         --model eagle2_5 \
-        --model_args pretrained=nvidia/Eagle2.5-8B,modality=video,num_frame=32,frame_indices_jsonl=results/cg_bench_512_results.jsonl \
+        --model_args pretrained=nvidia/Eagle2.5-8B,modality=video,num_frame=32,frame_indices_jsonl=results/cg_bench_512_results.jsonl,num_frame=32 \
         --tasks cgbench_subtitles \
         --batch_size 1 \
         --log_samples \
