@@ -103,7 +103,7 @@ For VideoLLM training, wew use the same data and stragety as LLaVA-Video, includ
 
 
 ## Checkpoint Preparation
-We recommend using the VideoLLM checkpoints we provided [here](https://huggingface.co/nvidia/VideoITG-8B) to reproduce our results.
+We recommend using the VideoLLM checkpoints we provided [here](https://huggingface.co/exiawsh/eagle-qwen2-7b-finetune-uni-ov-video-finetune-sftv1) to reproduce our results.
 
 ## Training
 You can train the model following:
