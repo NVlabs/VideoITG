@@ -2,6 +2,153 @@ body {
   font-family: 'Noto Sans', sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+.navbar.is-fixed-top {
+  box-shadow: 0 2px 12px rgba(10, 10, 10, 0.06);
+  backdrop-filter: saturate(180%) blur(8px);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.cvpr-navbar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(72, 199, 116, 0.12);
+  border: 1px solid rgba(72, 199, 116, 0.22);
+}
+
+.cvpr-navbar-text {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cvpr-navbar-logo {
+  height: 26px;
+  width: auto;
+}
+
+@media (max-width: 1023px) {
+  .cvpr-navbar-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.zoomable {
+  cursor: zoom-in;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.zoomable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(10, 10, 10, 0.08);
+}
+
+.logo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  justify-content: center;
+}
+
+.accepted-badge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-modal-content {
+  width: min(1200px, 94vw);
+  max-height: 86vh;
+  margin: 0 auto;
+}
+
+.image-modal-content img {
+  width: 100%;
+  height: auto;
+  max-height: 76vh;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.image-modal-caption {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.modal.is-active .image-modal-caption {
+  display: block;
+}
+
+.image-modal-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 28px;
+  line-height: 44px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.image-modal-nav:hover {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.image-modal-prev {
+  left: 14px;
+}
+
+.image-modal-next {
+  right: 14px;
+}
+
+.back-to-top {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  transform: translateY(6px);
+}
+
+.back-to-top.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.box {
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(10, 10, 10, 0.06);
+}
+
+.content img.interpolation-image {
+  border-radius: 10px;
+}
+
+.section {
+  scroll-margin-top: 5.25rem;
+}
+
 
 .footer .icon-link {
     font-size: 25px;

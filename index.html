@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VideoITG: Improving Multimodal Video Understanding with Instructed Temporal Grounding</title>
+  <title>VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding</title>
 
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
@@ -38,57 +38,111 @@
 </head>
 <body>
 
+<nav class="navbar is-spaced is-fixed-top" role="navigation" aria-label="main navigation">
+  <div class="container is-max-desktop">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="#top" style="font-weight: 700;">
+        VideoITG
+      </a>
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
 
-<section class="hero">
+    <div id="navbarBasic" class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <div class="navbar-item">
+          <div class="cvpr-navbar-badge">
+            <span class="icon" aria-hidden="true">
+              <i class="fas fa-award"></i>
+            </span>
+            <span class="cvpr-navbar-text">Accepted by CVPR 2026</span>
+            <img src="./static/images/CVPR.png" alt="CVPR 2026 Logo" class="cvpr-navbar-logo">
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <a class="navbar-item" href="#Abstract">Abstract</a>
+        <a class="navbar-item" href="#Dataset">Dataset</a>
+        <a class="navbar-item" href="#Model">Model</a>
+        <a class="navbar-item" href="#Experiments">Experiments</a>
+        <a class="navbar-item" href="#Qualitative">Qualitative</a>
+        <a class="navbar-item" href="#BibTeX">BibTeX</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<a id="top"></a>
+
+
+<section class="hero" style="padding-top: 4.5rem;">
   <div class="hero-body">
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title">VideoITG: Improving Multimodal Video Understanding with Instructed Temporal Grounding</h1>
+          <h1 class="title is-1 publication-title">VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding</h1>
           <!-- <div class="is-size-3 publication-authors">
             UnderReview
           </div> -->
           <!-- <div style="color: red; font-size: 24px; font-weight: bold;">CVPR 2025</div> 添加的红色字体行 -->
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?hl=zh-CN&user=7TWugs4AAAAJ">Shihao Wang</a><sup>1,2</sup>,
+              <a href="https://scholar.google.com.hk/citations?hl=zh-CN&user=7TWugs4AAAAJ">Shihao Wang</a><sup>1‡</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=lRj3moAAAAAJ&hl=zh-CN&oi=sra">Guo Chen</a><sup>2,3</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=lRj3moAAAAAJ&hl=zh-CN&oi=sra">Guo Chen</a><sup>2</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=HEY3UzgAAAAJ&hl=zh-CN&oi=ao">De-an Huang</a><sup>2</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=HEY3UzgAAAAJ&hl=zh-CN&oi=ao">De-an Huang</a><sup>3</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=H2fJLqEAAAAJ&hl=zh-CN&oi=sra">Zhiqi Li</a><sup>2,3</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=H2fJLqEAAAAJ&hl=zh-CN&oi=sra">Zhiqi Li</a><sup>2</sup>,
             </span>
             <span class="author-block">
               <a href="https://scholar.google.com/citations?user=LhdBgMAAAAAJ&hl=zh-CN&oi=ao">Minghan Li</a><sup>4</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=zOQj6-gAAAAJ&hl=zh-CN&oi=ao">Guilin Liu</a><sup>2</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=zOQj6-gAAAAJ&hl=zh-CN&oi=ao">Guilin Liu</a><sup>3</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com/citations?user=Oyx-_UIAAAAJ&hl=en">Jose M. Alvarez</a><sup>2</sup>,
+              <a href="https://scholar.google.com/citations?user=Oyx-_UIAAAAJ&hl=en">Jose M. Alvarez</a><sup>3</sup>,
             </span>
           </div>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=tAK5l1IAAAAJ&hl=zh-CN&oi=ao">Lei Zhang</a><sup>1*</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=tAK5l1IAAAAJ&hl=zh-CN&oi=ao">Lei Zhang</a><sup>1†</sup>,
             </span>
             <span class="author-block">
-              <a href="https://scholar.google.com.hk/citations?user=1VI_oYUAAAAJ&hl=zh-CN&oi=ao">Zhiding Yu</a><sup>2*</sup>,
+              <a href="https://scholar.google.com.hk/citations?user=1VI_oYUAAAAJ&hl=zh-CN&oi=ao">Zhiding Yu</a><sup>3†</sup>,
             </span>
           </div>
 
           <div class="organization">
-            <span class="author-block">The Hong Kong Polytechnic University<sup>1</sup>, NVIDIA<sup>2</sup>, Nanjing University<sup>3</sup>, Harvard University<sup>4</sup></span>
-            <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
+            <span class="author-block">The Hong Kong Polytechnic University<sup>1</sup>, Nanjing University<sup>2</sup>, NVIDIA<sup>3</sup>, Harvard University<sup>4</sup></span>
           </div>
 
           <div class="Equal Corresponding">
-            <span class="author-block">* Corresponding Author</span>
-            <!-- <span class="author-block"><sup>2</sup>Google Research</span> -->
+            <span class="author-block">† Equal Corresponding and Advising Authors &nbsp;&nbsp; ‡ Work done during an internship at NVIDIA</span>
+          </div>
+          <div class="logo" style="padding-top: 18px; padding-bottom: 0px;">
+            <div style="display: inline-block; margin: 0 14px;">
+              <a href="https://www.polyu.edu.hk/" style="text-decoration: none; font-size: 16px;">
+                <img src="https://www.polyu.edu.hk/assets/img/main-logo-3x.png" alt="PolyU Logo" style="width: auto; height: 38px;">
+              </a>
+            </div>
+            <div style="display: inline-block; margin: 0 14px;">
+              <a href="https://www.nju.edu.cn/index.htm" style="text-decoration: none; font-size: 16px;">
+                <img src="https://www.nju.edu.cn/__local/F/7A/1D/91723945F34FAA0A9C67700CF8F_13B47AE2_E3A7.png" alt="NJU Logo" style="width: auto; height: 40px;">
+              </a>
+            </div>
+            <div style="display: inline-block; margin: 0 14px;">
+              <a href="https://www.nvidia.com/" style="text-decoration: none; font-size: 16px;">
+                <img src="https://nv-tlabs.github.io/3DStyleNet/assets/nvidia.svg" alt="NVIDIA Logo" style="width: auto; height: 30px;">
+              </a>
+            </div>
           </div>
 	<div class="Email info">
 	  <span style="font-size: 1.2em; color: #5e5c5b;">&#9993;</span>
@@ -129,7 +183,7 @@
                       <line x1="15" y1="9" x2="15.01" y2="9"/>
                     </svg>
                   </span>
-                  <span>Model (Coming Soon)</span>
+                  <span>Model</span>
                 </a>
               </span>
               <span class="link-block">
@@ -155,17 +209,19 @@
 </section>
 
 
-<section class="section">
+<section class="section" id="Abstract">
     <div class="container is-max-desktop">
       <!-- Abstract. -->
       <div class="columns is-centered">
               <div class="column has-text-centered">
                   <img src="./static/images/intro.png"
-                       class="interpolation-image"
+                       class="interpolation-image zoomable"
+                       data-zoom-group="overview"
+                       data-zoom-caption="Figure 1: Overview of the VidThinker annotation pipeline for VideoITG."
                        alt="Interpolate start reference image."
                        style="width: 80%; height: auto;"/>
                   <p class="has-text-centered" style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                  <b>Figure 1: Overview of the VidThinker annotation pipeline for VideoITG. The pipeline consists of three stages that fully leverage the provided instructions: (1) segment-level clip captioning; (2) instruction-guided relevant clip retrieval; (3) fine-grained frame-level localization. </b> 
+                  <b>Figure 1: Overview of the VidThinker annotation pipeline for VideoITG. It consists of three human-inspired stages: (1) clip-level captioning under instructions; (2) instruction-guided relevant clip retrieval; and (3) fine-grained frame-level localization.</b>
                   </p>
               </div>
       </div>
@@ -174,7 +230,7 @@
           <h2 class="title is-3">Abstract</h2>
           <div class="content has-text-justified">
             <p>
-              Recent studies have revealed that selecting informative and relevant video frames can significantly improve the performance of Video Large Language Models (Video-LLMs). Current methods, such as reducing inter-frame redundancy, employing separate models for image-text relevance assessment, or utilizing temporal video grounding for event localization, are mostly training-free approaches, whereas they struggle to address the complex scenarios in long video understanding. We propose Instructed Temporal Grounding for Videos (VideoITG), featuring customized frame sampling aligned with user instructions. The core of VideoITG is the VidThinker pipeline, an automated annotation framework that explicitly mimics the human annotation process. First, it generates detailed clip-level captions conditioned on the instruction; then, it retrieves relevant video segments through instruction-guided reasoning; finally, it performs fine-grained frame selection to pinpoint the most informative visual evidence. Leveraging VidThinker, we construct the VideoITG-40K dataset, containing 40K videos and 500K instructed temporal grounding annotations. We then design a plug-and-play VideoITG model, which takes advantage of visual language alignment and reasoning capabilities of Video-LLMs, for effective frame selection in a discriminative manner. Coupled with Video-LLMs, VideoITG achieves consistent performance improvements across multiple multimodal video understanding benchmarks, showing its superiority and great potentials for video understanding.
+              While Video Large Language Models (Video-LLMs) have shown significant potential in multimodal understanding and reasoning tasks, how to efficiently select the most informative frames from videos remains a critical challenge. Existing methods attempt to optimize frame sampling by reducing inter-frame redundancy or employing unsupervised event localization. However, these approaches often fall short in handling complex instruction-following tasks and scenarios that demand precise temporal modeling, resulting in limited performance in both semantic alignment and temporal reasoning. To address the above challenges, we introduce <i>Instructed Temporal Grounding for Videos</i> (<b>VideoITG</b>), a framework aiming to adaptively customize frame sampling strategies based on user instructions. Specifically, we design the VidThinker pipeline, which automates annotation by generating instruction-conditioned captions, retrieving relevant video segments, and selecting key frames to enable efficient supervision. Using VidThinker, we build the VideoITG-40K dataset with 40K videos and 500K temporal grounding annotations. Our plug-and-play VideoITG model leverages Video-LLMs' visual-language alignment and reasoning for discriminative frame selection. VideoITG consistently boosts the performance on multiple multimodal video understanding benchmarks, demonstrating its effectiveness and potential.
             </p>
           </div>
         </div>
@@ -185,7 +241,7 @@
   </section>
 
   
-<section class="section">
+<section class="section" id="Dataset">
     <div class="container is-max-desktop">
   
   <!-- Quantitative Results. -->
@@ -194,7 +250,9 @@
           <center><h2 class="title is-3">Dataset Construction</h2></center>
           <div class="column is-center has-text-centered">
               <img src="./static/images/dataset.png"
-                   class="interpolation-image"
+                   class="interpolation-image zoomable"
+                   data-zoom-group="overview"
+                   data-zoom-caption="Figure 2: Illustration of four instruction types and their corresponding frame selection strategies in VidThinker."
                    alt="Interpolate start reference image."
                    style="transform: scale(0.9);"/>
               <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
@@ -210,7 +268,7 @@
 
 
 
-  <section class="section">
+  <section class="section" id="Model">
     <div class="container is-max-desktop">
   
   <!-- Quantitative Results. -->
@@ -219,11 +277,13 @@
           <center><h2 class="title is-3">Model Design</h2></center>
           <div class="column is-center has-text-centered">
               <img src="./static/images/method.png"
-                   class="interpolation-image"
+                   class="interpolation-image zoomable"
+                   data-zoom-group="overview"
+                   data-zoom-caption="Figure 3: VideoITG model design."
                    alt="Interpolate start reference image."
                    style="transform: scale(0.95);"/>
               <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
-                <b>Figure 3: VideoITG model design}: (a) Text generation aligns video and language tokens for sequential predictions. (b) Classification with causal attention utilizes anchor tokens for temporal cue management. (c) Classification with full attention facilitates interaction across visual and text tokens without anchors.</b>
+                <b>Figure 3: VideoITG model design: (A) Text generation aligns video and language tokens for sequential predictions. (B) Classification with causal attention utilizes anchor tokens for temporal cue management. (C) Classification with full attention facilitates interaction across visual and text tokens without anchors.</b>
               </p>
           </div>
           <!--/ Interpolating. -->
@@ -234,74 +294,117 @@
   </section>
 
 
-  <section class="section">
+  <section class="section" id="Experiments">
     <div class="container is-max-desktop">
-  
-  <!-- Quantitative Results. -->
       <div class="columns is-centered">
         <div class="column is-full-width">
-          <center><h2 class="title is-3">Quantitative Results</h2></center>
-  
-          <!-- Interpolating. -->
+          <center><h2 class="title is-3">Experiments</h2></center>
+
+          <h3 class="title is-4" style="margin-top: 30px;">Frame Selection Comparison</h3>
+          <div class="content has-text-centered">
+            <img src="./static/images/acc_speed.png"
+                 class="interpolation-image zoomable"
+                 data-zoom-group="experiments"
+                 data-zoom-caption="Figure 4: Comparison of different frame selection methods on VideoMME with LLaVA-Video-7B."
+                 alt="Comparison of different frame selection methods on VideoMME."
+                 style="max-width: 720px; width: 100%; height: auto;"/>
+            <p class="has-text-centered" style="margin-top: 6px; font-size: 0.9em; color: #666;">
+              <b>Figure 4: Comparison of different frame selection methods on VideoMME with LLaVA-Video-7B. VideoITG consistently enhances baseline methods and achieves state-of-the-art performance.</b>
+            </p>
+          </div>
+
           <h3 class="title is-4" style="margin-top: 30px;">Main Results</h3>
-          <div class="content has-text-justified">
+          <div class="content has-text-centered">
+            <img src="./static/images/exp1.png"
+                 class="interpolation-image zoomable"
+                 data-zoom-group="experiments"
+                 data-zoom-caption="Table 2: Results with different selection methods."
+                 alt="Results with different selection methods."
+                 style="width: 100%; height: auto;"/>
+            <p class="has-text-centered" style="margin-top: 6px; font-size: 0.9em; color: #666;">
+              <b>Table 2: Results with different selection methods.</b>
+            </p>
           </div>
-          <div class="column is-center has-text-centered">
-              <img src="./static/images/exp1.png"
-                   class="interpolation-image"
-                   alt="Interpolate start reference image."/>
-                   <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
-                    <b>Table 1: Performance comparison of VideoITG when integrated with different Video-LLMs, which have different model sizes of the answering LLM and different numbers of sampled frames.</b>
-                  </p>                   
+
+          <h3 class="title is-4" style="margin-top: 30px;">Extension to More Video-LLMs</h3>
+          <div class="content has-text-centered">
+            <img src="./static/images/exp2.png"
+                 class="interpolation-image zoomable"
+                 data-zoom-group="experiments"
+                 data-zoom-caption="Table 3: Performance comparison of VideoITG integrated with different Video-LLMs."
+                 alt="VideoITG integrated with different Video-LLMs."
+                 style="width: 100%; height: auto;"/>
+            <p class="has-text-centered" style="margin-top: 6px; font-size: 0.9em; color: #666;">
+              <b>Table 3: Performance comparison of VideoITG integrated with different Video-LLMs, varying in both the size of the answering LLM and the number of sampled frames.</b>
+            </p>
           </div>
-  
-  
-          <br/>
-          <!--/ Interpolating. -->
-  
-          <!-- Re-rendering. -->
-          <h3 class="title is-4">Empirical Study on VideoITG</h3>
-          <div class="content has-text-justified">
-          </div>
-          <div class="columns is-centered">
-            <div class="column is-center has-text-centered">
-                <img src="./static/images/exp2.png"
-                     class="interpolation-image"
-                     alt="Interpolate start reference image."/>
-                     <p class="has-text-centered" style="margin-top: 2px; font-size: 0.9em; color: #666;">
-                      <b>Table 2: Empirical study on VideoITG-40k dataset and VideoITG model design.</b>
-                    </p>         
-            </div>
+
+          <h3 class="title is-4" style="margin-top: 30px;">Ablation Study</h3>
+          <div class="content has-text-centered">
+            <img src="./static/images/ablation.png"
+                 class="interpolation-image zoomable"
+                 data-zoom-group="experiments"
+                 data-zoom-caption="Table 4: Empirical studies on the VideoITG-40K dataset and VideoITG model design."
+                 alt="Empirical studies on the VideoITG-40K dataset and VideoITG model design."
+                 style="width: 100%; height: auto;"/>
+            <p class="has-text-centered" style="margin-top: 6px; font-size: 0.9em; color: #666;">
+              <b>Table 4: Empirical studies on the VideoITG-40K dataset and VideoITG model design.</b>
+            </p>
           </div>
         </div>
       </div>
-  
     </div>
   </section>
 
 
-  <section class="section">
+  <section class="section" id="Qualitative">
     <div class="container is-max-desktop">
-      <center><h2 class="title is-3">Qualitative Results</h2></center><br>
-      <h2 class="caption" style="text-align: center; margin-bottom: 20px; font-size: 1.2em; font-weight: bold; margin-left: 50px;">
+      <center><h2 class="title is-3">Qualitative Results</h2></center>
+      <p class="has-text-centered" style="margin-top: -10px; margin-bottom: 18px; font-size: 1.05em;">
         Our VideoITG model effectively searches for temporal cues in long videos, enabling VideoLLM to accurately answer questions.
-      </h2>
-      <div class="content has-text-justified" style="margin-left: 150px;"> <!-- 将右边距增加到100px -->
-          <iframe width="700" height="400" src="https://www.youtube.com/embed/E83XxGvEPtI" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </p>
+
+      <div class="columns is-centered is-multiline">
+        <div class="column is-12-tablet is-6-desktop">
+          <div class="box">
+            <div class="video" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+              <iframe src="https://www.youtube.com/embed/E83XxGvEPtI"
+                      title="Qualitative example 1"
+                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                      frameborder="0"
+                      allow="autoplay; encrypted-media"
+                      allowfullscreen></iframe>
+            </div>
+            <div class="content has-text-centered" style="margin-top: 12px;">
+              <img src="./static/images/example1.png"
+                   class="interpolation-image zoomable"
+                   data-zoom-group="qualitative"
+                   data-zoom-caption="Qualitative example 1 (Uni vs Ours)."
+                   alt="Qualitative result 1."
+                   style="width: 100%; height: auto;"/>
+            </div>
+          </div>
         </div>
-        <div class="content has-text-centered">
-          <img src="./static/images/example1.png"
-               class="interpolation-image"
-               alt="Qualitative result 1."/>
-        </div>
-        <br/>
-        <div class="content has-text-justified" style="margin-left: 150px;"> <!-- 将右边距增加到100px -->
-          <iframe width="700" height="400" src="https://www.youtube.com/embed/6DAFkaGUiT4" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        </div>
-        <div class="content has-text-centered">
-          <img src="./static/images/example2.png"
-               class="interpolation-image"
-               alt="Qualitative result 2."/>
+
+        <div class="column is-12-tablet is-6-desktop">
+          <div class="box">
+            <div class="video" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+              <iframe src="https://www.youtube.com/embed/6DAFkaGUiT4"
+                      title="Qualitative example 2"
+                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                      frameborder="0"
+                      allow="autoplay; encrypted-media"
+                      allowfullscreen></iframe>
+            </div>
+            <div class="content has-text-centered" style="margin-top: 12px;">
+              <img src="./static/images/example2.png"
+                   class="interpolation-image zoomable"
+                   data-zoom-group="qualitative"
+                   data-zoom-caption="Qualitative example 2 (Uni vs Ours)."
+                   alt="Qualitative result 2."
+                   style="width: 100%; height: auto;"/>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -315,7 +418,7 @@
     <h2 class="title">BibTeX</h2>
     <pre><code>@misc{wang2025videoitgmultimodalvideounderstanding,
       title={VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding}, 
-      author={Shihao Wang and Guo Chen and De-an Huang and Zhiqi Li and Minghan Li and Guilin Li and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
+      author={Shihao Wang and Guo Chen and De-an Huang and Zhiqi Li and Minghan Li and Guilin Liu and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
       year={2025},
       eprint={2507.13353},
       archivePrefix={arXiv},
@@ -345,21 +448,41 @@
 </div>
 </footer>
 
+<button class="back-to-top button is-dark is-rounded" id="backToTop" aria-label="Back to top">
+  <span class="icon"><i class="fas fa-arrow-up"></i></span>
+</button>
+
+<div class="modal" id="imageModal" aria-hidden="true">
+  <div class="modal-background" data-modal-close></div>
+  <div class="modal-content image-modal-content">
+    <figure class="image">
+      <img id="imageModalImg" alt="Zoomed image"/>
+    </figure>
+    <p class="has-text-centered image-modal-caption" id="imageModalCaption"></p>
+  </div>
+  <button class="modal-close is-large" aria-label="close" data-modal-close></button>
+  <button class="image-modal-nav image-modal-prev" type="button" aria-label="Previous image">‹</button>
+  <button class="image-modal-nav image-modal-next" type="button" aria-label="Next image">›</button>
+</div>
+
 <script>
+      // Optional: auto play/pause a hero video when it exists.
       var videoContainer = document.getElementById('video-container');
       var video = document.getElementById('video');
 
-      var videoOffset = videoContainer.offsetTop;
+      if (videoContainer && video) {
+        var videoOffset = videoContainer.offsetTop;
 
-      window.addEventListener('scroll', function() {
-        var scrollPosition = window.scrollY || window.pageYOffset;
+        window.addEventListener('scroll', function() {
+          var scrollPosition = window.scrollY || window.pageYOffset;
 
-        if (scrollPosition >= videoOffset) {
-          video.play();
-        } else {
-          video.pause();
-        }
-      });
+          if (scrollPosition >= videoOffset) {
+            video.play();
+          } else {
+            video.pause();
+          }
+        });
+      }
     </script>
 
 </body>
