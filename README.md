@@ -1,4 +1,4 @@
-# VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding
+# [CVPR 2026] VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding
 
 ---
 
@@ -47,6 +47,7 @@ While Video Large Language Models (Video-LLMs) have shown significant potential 
 ## Contents
 - [Models & Performance](#models--performance)
 - [Visual Examples](#visual-examples)
+- [Inference](#inference)
 - [Install](#install)
 - [Training Data](#training-data)
 - [Checkpoint Preparation](#checkpoint-preparation)
@@ -84,6 +85,41 @@ Results below are copied from the paper (Table 3). `UNI-32` denotes uniform samp
 </div><br>
 
 
+
+## Inference
+
+### Checkpoint
+- **VideoITG checkpoint (Top‑K selector)**: `nvidia/VideoITG-8B` ([HuggingFace](https://huggingface.co/nvidia/VideoITG-8B))
+
+### How frame selection works (512 → sort → Top‑K)
+Our VideoITG selector **scores 512 sampled frames** (default in scripts) with a sigmoid head, **sorts frames by score (descending)**, then selects the **Top‑K** most relevant frames. For downstream usage, we typically **sort the selected frame indices in ascending order** (chronological) before feeding them into a Video-LLM.
+
+You can directly refer to the provided inference reference implementation: [`infer.py`](infer.py) (also consistent with [`NVlabs/VideoITG/infer.py`](https://github.com/NVlabs/VideoITG/blob/main/infer.py)).
+
+### JSONL outputs explained
+There are **two** JSONL files commonly used in this repo:
+
+1) **Grounding output** (`results.jsonl` written by `--model videoitg`)
+   - Default path: `${output_dir}/results.jsonl` (see `output_dir` in `scripts/eval_lmms_eval/videomme_grounding.sh`)
+   - Each line is a JSON dict containing (key fields):
+     - `doc_id`: sample id in the benchmark split
+     - `video_path`: video path used by the task loader
+     - `contexts`: the full prompt used for scoring
+     - `index`: a list of **frame indices ordered by score (descending)** (mapped back to original video frame ids)
+     - `logits`: the corresponding **sorted scores** (same order as `index`, rounded to 2 decimals)
+
+   Example (one line):
+```json
+{"doc_id": 12, "video_path": "...", "index": [120, 60, 180], "logits": [0.98, 0.97, 0.95]}
+```
+
+2) **Frame indices file** (`frame_indices_jsonl` consumed by downstream Video-LLMs)
+   - Used by models like InternVL / Qwen3-VL / Eagle (see `frame_indices_jsonl` in `scripts/eval_lmms_eval/*.sh`)
+   - Format: each line is:
+```json
+{"doc_id": 12, "index": [60, 120, 180]}
+```
+   - Here, `index` should be the **selected Top‑K frame indices** for that `doc_id` (usually sorted ascending for chronological order).
 
 ## Install
 Please following the guide here to prepare the environment on **Linux OS**.
