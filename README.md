@@ -94,7 +94,7 @@ Results below are copied from the paper (Table 3). `UNI-32` denotes uniform samp
 ### How frame selection works (512 → sort → Top‑K)
 Our VideoITG selector **scores 512 sampled frames** (default in scripts) with a sigmoid head, **sorts frames by score (descending)**, then selects the **Top‑K** most relevant frames. For downstream usage, we typically **sort the selected frame indices in ascending order** (chronological) before feeding them into a Video-LLM.
 
-You can directly refer to the provided inference reference implementation: [`infer.py`](infer.py) (https://github.com/NVlabs/VideoITG/blob/main/infer.py)).
+You can directly refer to the provided inference reference implementation: [`infer.py`](infer.py).
 
 ### JSONL outputs explained
 There are **two** JSONL files commonly used in this repo:
