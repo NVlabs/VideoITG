@@ -41,6 +41,7 @@ AVAILABLE_MODELS = {
     "phi3v": "Phi3v",
     "qwen_vl": "Qwen_VL",
     "qwen2_vl": "Qwen2_VL",
+    "qwen3_vl": "Qwen3VL",
     "qwen2_audio": "Qwen2_Audio",
     "qwen_vl_api": "Qwen_VL_API",
     "reka": "Reka",

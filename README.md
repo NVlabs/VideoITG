@@ -4,6 +4,7 @@
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
 [![Model License](https://img.shields.io/badge/MODEL%20License-CC%20By%20NC%204.0-red.svg)](MODEL_LICENSE)
+[![CVPR 2026](https://img.shields.io/badge/CVPR%202026-Accepted-48c774.svg)](#)
 
 
 
@@ -16,7 +17,10 @@
     <img src="https://img.shields.io/badge/paper-A42C25?style=for-the-badge&logo=arxiv&logoColor=white" alt="Paper">
   </a>
   <a href="https://nvlabs.github.io/VideoITG/">
-    <img src="https://img.shields.io/badge/VideoITG-000000?style=for-the-badge&logo=github&logoColor=000&logoColor=whit" alt="WebPage">
+    <img src="https://img.shields.io/badge/VideoITG-000000?style=for-the-badge&logo=github&logoColor=white" alt="WebPage">
+  </a>
+  <a href="https://huggingface.co/nvidia/VideoITG-8B">
+    <img src="https://img.shields.io/badge/VideoITG--8B-fcd022?style=for-the-badge&logo=huggingface&logoColor=000" alt="Model">
   </a>
   <a href="https://huggingface.co/datasets/NVEagle/VideoITG-40K">
     <img src="https://img.shields.io/badge/VideoITG40K-fcd022?style=for-the-badge&logo=huggingface&logoColor=000" alt="Dataset">
@@ -27,11 +31,13 @@
 <img src="assets/teaser.png" width="90%">
 </div>
 
-VideoITG is an innovative approach to video understanding, designed to enhance the performance of Video Large Language Models (Video-LLMs) through informed frame selection. It tackles the complexities of real-world video scenarios by aligning frame sampling with user instructions. VideoITG employs a comprehensive pipeline that includes detailed clip-level description generation, question-guided clip retrieval, and task-specific frame selection. This results in a robust dataset of 40K videos and 480K annotations. The plug-and-play model leverages visual language alignment and reasoning, achieving superior results across multimodal benchmarks, particularly in tasks requiring precise temporal grounding.
+While Video Large Language Models (Video-LLMs) have shown significant potential in multimodal understanding and reasoning tasks, efficiently selecting the most informative frames from videos remains a critical challenge. To address this, we introduce **Instructed Temporal Grounding for Videos (VideoITG)**, a framework that adaptively customizes frame sampling strategies based on user instructions. VideoITG is supported by **VidThinker**, an automated annotation pipeline that (1) generates instruction-conditioned clip captions, (2) retrieves relevant video segments with instruction-guided reasoning, and (3) performs fine-grained frame localization. Using VidThinker, we build the **VideoITG-40K** dataset with **40K videos and 500K temporal grounding annotations**. Our plug-and-play VideoITG model leverages Video-LLMs' visual-language alignment and reasoning for discriminative frame selection, consistently improving performance across multiple multimodal video understanding benchmarks.
 
 
 
 ## Updates
+- [2026/03/17] Release notes: add **CG-Bench (mini)** evaluation support and release **Qwen3-VL** + **InternVL3.5** evaluation scripts under `scripts/eval_lmms_eval/`.
+- [2026/02/21] 🎉 **Accepted by CVPR 2026**.
 - [2025/09/30] The results of VideoITG on benchmarks release. See [results](results/) for released JSONL files.
 - [2025/07/25] Code and checkpoint release. 
 - [2025/07/18] Technical report release. [[arXiv](https://arxiv.org/abs/2507.13353)]
@@ -49,13 +55,22 @@ VideoITG is an innovative approach to video understanding, designed to enhance t
 
 
 ## Models & Performance
-Here is the model trained on our organized 1.8M supervised fine-tuning data.
-| Model&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | VideoLLM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Frames | LongVideoBench | MLVU | VideoMME | CG-Bench |
-|----------|------------|-------------|:------:|:-------:|:----------:|:----------:|
-| [VideoITG-8B](https://huggingface.co/nvidia/VideoITG-8B) | InternVL2.5-8B  | 32 | 61.9 (+2.9%) | 75.0 (+7.8%) |  67.3 (+4.0%)  |    46.7 (+7.0%)    |
-| VideoITG-8B | InternVL2.5-26B | 32 | 63.0 (+1.0%) | 78.9 (+6.1%) |  69.9 (+2.5)  |   48.7 (+6.0%)    |
-| VideoITG-8B | LLaVA-Video-7B  | 32 | 61.6 (3.6%) | 74.6 (+8.6%) |  66.1 (+3.0%)  |      42.8 (+9.0%)     |
-| VideoITG-8B | LLaVA-Video-7B  | 64 | 60.9 (+7.4%) | 76.3 (+7.6%) |  66.4 (+1.9%)  |    42.9 (8.1%)   |
+Results below are copied from the paper (Table 3). `UNI-32` denotes uniform sampling of 32 frames, and `ITG-32` denotes selecting Top-32 frames based on relevance scores produced by VideoITG.
+
+| Video-LLM | Selection | LongVideoBench | MLVU | VideoMME-S | VideoMME-M | VideoMME-L | CG-Bench-mini | Average |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| InternVL2.5-8B | UNI-32 | 58.3 | 66.4 | 75.1 | 61.7 | 53.1 | 37.7 | 58.7 |
+| InternVL2.5-8B | ITG-32 | 61.9 (+3.6) | 75.0 (+8.6) | 78.0 (+2.9) | 67.1 (+5.4) | 56.9 (+3.8) | 46.7 (+9.0) | 64.3 (+5.6) |
+| InternVL2.5-26B | UNI-32 | 55.6 | 71.3 | 78.1 | 67.1 | 56.9 | 40.6 | 61.6 |
+| InternVL2.5-26B | ITG-32 | 63.0 (+7.4) | 78.9 (+7.6) | 80.8 (+2.7) | 69.0 (+1.9) | 59.9 (+3.0) | 48.7 (+8.1) | 66.7 (+5.1) |
+| InternVL3.5-8B | UNI-32 | 60.0 | 70.0 | 77.0 | 62.4 | 53.4 | 40.9 | 60.6 |
+| InternVL3.5-8B | ITG-32 | 65.7 (+5.7) | 74.1 (+4.1) | 78.4 (+1.4) | 65.9 (+3.5) | 59.0 (+5.6) | 47.6 (+6.7) | 65.1 (+4.5) |
+| Qwen3-VL | UNI-32 | 59.1 | 64.1 | 76.0 | 60.9 | 55.1 | 40.1 | 59.2 |
+| Qwen3-VL | ITG-32 | 63.6 (+4.5) | 77.2 (+13.1) | 79.9 (+3.9) | 66.6 (+5.7) | 60.3 (+5.2) | 47.3 (+7.2) | 65.8 (+6.6) |
+| LLaVA-Video-7B | UNI-32 | 58.7 | 66.8 | 76.3 | 60.3 | 52.7 | 35.8 | 58.4 |
+| LLaVA-Video-7B | ITG-32 | 61.6 (+2.9) | 74.6 (+7.8) | 77.3 (+1.0) | 65.9 (+5.6) | 55.2 (+2.5) | 42.8 (+7.0) | 62.9 (+4.5) |
+| Eagle2.5-8B | UNI-32 | 63.0 | 67.8 | 78.8 | 64.1 | 55.9 | 41.2 | 61.8 |
+| Eagle2.5-8B | ITG-32 | 66.8 (+3.8) | 76.5 (+8.7) | 80.0 (+1.2) | 67.8 (+3.7) | 60.3 (+4.4) | 49.0 (+7.8) | 66.7 (+4.9) |
 
 
 ## Visual Examples
@@ -96,7 +111,7 @@ pip install flash-attn==2.4.2 --no-build-isolation
 ## Training Data
 
 ### VideoLLM Data
-For VideoLLM training, wew use the same data and stragety as LLaVA-Video, including the [Pretraining Data](https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K), [OV SFT Data](https://huggingface.co/datasets/lmms-lab/LLaVA-OneVision-Data) and [LLaVA-Video Data](https://huggingface.co/datasets/lmms-lab/LLaVA-Video-178K).
+For VideoLLM training, we use the same data and strategy as LLaVA-Video, including the [Pretraining Data](https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K), [OV SFT Data](https://huggingface.co/datasets/lmms-lab/LLaVA-OneVision-Data) and [LLaVA-Video Data](https://huggingface.co/datasets/lmms-lab/LLaVA-Video-178K).
 
 
 ### VideoITG Data
@@ -126,7 +141,7 @@ For evaluation, we use Videomme as an example.
 First, using this command to run our VideoITG model and get the instructed grounding results.
 
 ```bash
-bash scripts/eval_lmms_eval/videomme_grounding.sh $REPO_ID_OR_LOCAL_PATH $MODEL_NAME $CONV_MODE
+bash scripts/eval_lmms_eval/videomme_grounding.sh
 ```
 
 After running this command, a .jsonl file containing the scores for each frame will be generated in the output directory output_dir=./videomme_result_512. We will select $K$ frames from these files to be used for inference with the downstream VLM.
@@ -136,6 +151,23 @@ Taking the InternVL2.5 model as an example, run the following command:
 bash scripts/eval_lmms_eval/internvl2.5.sh
 ```
 Before running the script, you first need to fill in the path of the .jsonl file generated in the output_dir into the frame_indices_jsonl variable. Then, set num_frame according to your specific needs; for instance, if you want to select the top 32 frames, set num_frame to 32 in the script.
+
+#### Script arguments explained
+All evaluation scripts are thin wrappers around `lmms_eval` with `accelerate`. The key arguments are:
+
+- `--tasks`: which benchmark to run (e.g., `videomme`, `mlvu`, `longvideobench_val_v`, `cgbench_subtitles`).
+- `--model`: the evaluation backend (e.g., `videoitg`, `internvl2`, `internvl3_5`, `qwen3_vl`, `eagle2_5`).
+- `--model_args`: comma-separated key-value pairs consumed by each `--model`.
+  - **VideoITG grounding stage** (`--model videoitg`, see `videomme_grounding.sh`):
+    - `pretrained`: HF repo or local path of VideoITG (default: `nvidia/VideoITG-8B`).
+    - `num_frames`: number of uniformly decoded frames to score before selection (e.g., `512`).
+    - `target_fps`: target fps used when extracting frames (e.g., `1`).
+    - `output_dir`: where the per-sample frame scores `.jsonl` are written (e.g., `./videomme_result_512`).
+  - **Downstream Video-LLM stage** (e.g., `internvl2.5.sh`, `internvl3.5.sh`, `qwen3_vl.sh`):
+    - `pretrained`: HF repo of the downstream Video-LLM.
+    - `frame_indices_jsonl`: the selected frame indices file (Top-K indices per sample), produced from the grounding stage output.
+    - `num_frame` / `max_num_frames`: how many frames to feed into the downstream model (typically `32`).
+    - `modality`: set to `video` for models that require it (e.g., InternVL / Eagle).
 ### Notes
 In our paper, we report the results of CG-Bench mini, which includes 3,000 QA pairs.
 
@@ -144,11 +176,14 @@ If you want to evaluate Eagle2.5, please update transformers to 4.55.4 (but can'
 ## Citation
 If you find this project useful, please cite our work:
 ```
-@article{wang2025videoitg,
-  title     = {VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding},
-  author    = {Shihao Wang and Guo Chen and De-An Huang and Zhiqi Li and Minghan Li and Guilin Liu and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
-  journal   = {arXiv preprint arXiv:2507.13353},
-  year      = {2025}
+@misc{wang2025videoitgmultimodalvideounderstanding,
+  title        = {VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding},
+  author       = {Shihao Wang and Guo Chen and De-an Huang and Zhiqi Li and Minghan Li and Guilin Liu and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
+  year         = {2025},
+  eprint       = {2507.13353},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.CV},
+  url          = {https://arxiv.org/abs/2507.13353}
 }
 ```
 ## License/Terms of Use
