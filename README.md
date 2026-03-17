@@ -1,4 +1,4 @@
-# [CVPR 2026] VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding
+# VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding
 
 ---
 
