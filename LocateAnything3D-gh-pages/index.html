@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocateAnything3D: Vision-Language 3D Detection with Chain-of-Sight</title>
+    <meta name="description" content="LocateAnything3D turns monocular 3D detection into a next-token reasoning problem for vision-language models via a Chain-of-Sight decoding interface.">
+    <meta property="og:title" content="LocateAnything3D">
+    <meta property="og:description" content="Chain-of-Sight decoding unifies 2D grounding and 3D detection inside a vision-language model.">
+    <meta property="og:image" content="static/images/LocateAnything3D-teaser.png">
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="static/images/LocateAnything3D-teaser.png">
+</head>
+<body>
+<div class="page">
+    <header class="hero" id="top">
+        <div class="hero-content">
+            <div class="hero-copy">
+                <div class="badge">VLM-native 3D Perception • Open-World 3D Detection • Chain-of-Sight</div>
+                <h1 class="hero-title">
+                    <span class="hero-title-mark">LocateAnything3D</span>
+                    <span class="hero-title-rest">Vision-Language 3D Detection with Chain-of-Sight</span>
+                </h1>
+                <div class="author-list">
+                    <a href="https://yunzeman.github.io/" target="_blank" rel="noopener">Yunze Man<sup>*</sup></a>
+                    <a href="https://exiawsh.github.io/shihaow-homepage.github.io/">Shihao Wang<sup></sup></a>
+                    <a href="#top">Guowen Zhang<sup></sup></a>
+                    <a href="https://www.linkedin.com/in/johan-bj%C3%B6rck-b9a6bb65/">Johan Bjorck</a>
+                    <a href="https://zhiqi-li.github.io/">Zhiqi Li</a>
+                    <a href="https://lgui.web.illinois.edu/">Liang-Yan Gui<sup></sup></a>
+                    <a href="https://jimfan.me/">Jim Fan</a>
+                    <a href="https://jankautz.com/">Jan Kautz</a>
+                    <a href="https://yxw.cs.illinois.edu/">Yu-Xiong Wang<sup>&dagger;</sup></a>
+                    <a href="https://chrisding.github.io/">Zhiding Yu<sup>&dagger;</sup></a>
+                </div>
+                <div class="affiliation-logos" aria-label="Partner institution logos">
+                    <img src="static/svgs/nvidia-logo.svg" alt="NVIDIA logo" loading="lazy">
+                    <img src="static/svgs/uiuc_logo.svg" alt="University of Illinois Urbana-Champaign logo" loading="lazy">
+                </div>
+                <p class="author-note">* Work done during internship at NVIDIA &nbsp;·&nbsp; † Corresponding authors</p>
+                <p class="subtitle">
+                    LocateAnything3D names what it sees and knows where they are in 3D. A monocular RGB image plus a text query or optional visual prompt becomes a short, structured token sequence that first grounds objects in 2D and then infers their 3D position, size, and pose.
+                    The result is 49.89 AP<sub>3D</sub> on Omni3D with strong zero-shot generalization.
+                </p>
+                <div class="cta-row">
+                    <a class="pill" href="https://arxiv.org/abs/2511.20648" title="Paper" aria-disabled="true">📄 Paper</a>
+                    <a class="pill secondary" href="#" title="Code release in progress" aria-disabled="true">💾 Code (soon)</a>
+                    <a class="pill secondary" href="#results">📊 Benchmarks</a>
+                </div>
+            </div>
+            <div class="hero-media">
+                <img src="static/images/LocateAnything3D-moresuccess.png" alt="LocateAnything3D teaser figure showing detection, grounding, and visual prompting." data-lightbox data-caption="LocateAnything3D unifies 3D detection and 3D grounding with open-world visual prompting.">
+            </div>
+        </div>
+    </header>
+
+    <div class="teaser-figure" style="margin-top: 30px; margin-bottom: -30px;">
+        <img src="static/images/LocateAnything3D-teaser.png" alt="LocateAnything3D teaser figure illustrating detection, grounding, and visual prompting." data-lightbox data-caption="LocateAnything3D unifies 3D detection and 3D grounding while supporting text/visual prompts.">
+        <p class="teaser-caption">LocateAnything3D unifies 3D detection and 3D grounding with open-world categories, free-form text guidance, and flexible visual prompts.</p>
+    </div>
+
+    <main>
+        <section id="abstract">
+            <p class="section-title">Abstract</p>
+            <h2>Turning 3D Detection into a Disciplined Next-Token Problem</h2>
+            <p>
+                To act in the world, a model must name what it sees and know where it is in 3D. LocateAnything3D is a VLM-native recipe that casts 3D detection as next-token
+                prediction via an explicit <strong>Chain-of-Sight (CoS)</strong> sequence mirroring how humans reason from images: localize an object in 2D, then infer its distance,
+                size, and pose. The decoder first emits 2D detections as a visual chain-of-thought before predicting calibrated 3D boxes under an easy-to-hard curriculum.
+                Across objects, a near-to-far ordering reduces early ambiguity and matches ego-centric utility; within each object, a center-from-camera, dimensions, and rotation
+                factorization ranks information by stability and learnability. This interface preserves open-vocabulary grounding and visual prompting without bespoke heads.
+            </p>
+            <p>
+                On the challenging Omni3D benchmark we achieve <strong>49.89 AP<sub>3D</sub></strong>, surpassing the previous best by <strong>+15.51</strong> absolute even when the baseline has access to ground-truth 2D boxes.
+                LocateAnything3D also generalizes zero-shot to held-out categories with strong robustness by turning 3D detection into a disciplined next-token problem.
+            </p>
+        </section>
+
+        <section id="method">
+            <p class="section-title">Method</p>
+            <h2>LocateAnything3D Chain-of-Sight Decoding</h2>
+            <p>
+                LocateAnything3D is post-trained from the Eagle 2.5 base model. In the Chain-of-Sight decoding, monocular 3D perception is formatted as a compact sequence that interleaves 2D and 3D information per instance, optimized end-to-end as next-token prediction.
+            </p>
+            <div class="split">
+                <div class="card">
+                    <h3>Chain-of-Sight Factorization</h3>
+                    <ul>
+                        <li><strong>Input:</strong> Monocular RGB image plus free-form text query (e.g., “detect all cars,” “any chair,” “all pedestrians on the crosswalk”) optionally augmented with a visual prompt (box or click).</li>
+                        <li><strong>CoS sequence:</strong> For each instance, the decoder emits a 2D bounding box, then the 3D box (center, size, rotation), and repeats until EOS.</li>
+                        <li><strong>Output:</strong> Calibrated multi-object 3D boxes in the camera frame with open-vocabulary labels and depth-colored cuboids.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Curricula & Packaging</h3>
+                    <ul>
+                        <li><strong>Inter-object curriculum:</strong> Serialize instances in depth order, near → far, so confident objects appear early and stabilize decoding.</li>
+                        <li><strong>Intra-object factorization:</strong> Within each object, produce center-from-camera → dimensions → rotation to rank information by stability.</li>
+                        <li><strong>CoS packaging:</strong> Canonical multi-box normalization, large-scale text auto-annotation, anti-hallucination negatives, and other CoS-ready supervision tools.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: -30px;">
+                <img src="static/images/LocateAnything3D-architecture.png" alt="LocateAnything3D decoding architecture diagram." data-lightbox data-caption="Single RGB input + optional prompt → Chain-of-Sight decoding curriculum → 2D→3D outputs.">
+                <span>Architecture overview with Chain-of-Sight 3D decoding curriculum.</span>
+            </div>
+        </section>
+
+        <section id="highlights">
+            <p class="section-title">Highlights</p>
+            <h2>Chain-of-Sight 3D Reasoning in a VLM</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>Chain-of-Sight 3D Reasoning</h3>
+                    <p>Casts 3D detection as a short, structured token sequence that mirrors human inference: first localize in 2D, then infer distance, size, and pose.</p>
+                </div>
+                <div class="card">
+                    <h3>Joint 2D–3D Interface</h3>
+                    <p>Uses 2D bounding boxes as a visual chain-of-thought, tightly coupling 2D grounding and 3D estimation within a single autoregressive VLM decoder that supports text and visual prompts.</p>
+                </div>
+                <div class="card">
+                    <h3>3D-Aware Curriculum</h3>
+                    <p>Orders detections from near to far and factorizes each 3D box into center → size → rotation, aligning supervision with what is easiest and most informative to predict.</p>
+                </div>
+                <div class="card">
+                    <h3>Cross-Domain Robustness</h3>
+                    <p>Trained on a CoS-ready corpus (~1.74M examples) spanning indoor/outdoor scenes, driving, ARKit, synthetic environments, and more for strong zero-shot generalization.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="data">
+            <p class="section-title">LocateAnything3D Data</p>
+            <h2>CoS-Ready Supervision Across Domains</h2>
+            <p>
+                We curate a camera-centric dataset that presents supervision in exactly the form the model decodes, making Chain-of-Sight learning practical.
+            </p>
+            <div class="grid">
+                <div class="card">
+                    <h3>Unify Benchmarks</h3>
+                    <p>ARKitScenes, SUN-RGBD, Hypersim, Objectron, KITTI, nuScenes, CA-1M, and more are harmonized into a shared schema.</p>
+                </div>
+                <div class="card">
+                    <h3>Canonical Multi-Box Normalization</h3>
+                    <p>Ensures every cuboid is calibrated in the same camera frame for stable supervision.</p>
+                </div>
+                <div class="card">
+                    <h3>Large-Scale Text Auto-Annotation</h3>
+                    <p>Maintains open-vocabulary prompting by auto-generating category and spatial prompts.</p>
+                </div>
+                <div class="card">
+                    <h3>Anti-Hallucination Negatives</h3>
+                    <p>Pair negative prompts with CoS tuples to teach the model when to abstain.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="results">
+            <p class="section-title">Results</p>
+            <h2>State-of-the-Art 3D Detection & Grounding</h2>
+            <p>
+                LocateAnything3D delivers substantial gains over prior monocular 3D detectors and VLM-based systems while preserving open-vocabulary grounding.
+            </p>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: 30px;">
+                <img src="static/images/LocateAnything3D-detection.png" alt="Bar chart comparing AP3D on Omni3D." data-lightbox data-caption="Omni3D benchmark: LocateAnything3D reaches 49.89 AP3D, +15.51 absolute over the previous best DetAny3D.">
+                <strong>Omni3D Detection.</strong>
+                <span>49.89 AP<sub>3D</sub>, +15.51 points over DetAny3D even when the baseline has ground-truth 2D boxes.</span>
+            </div>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: 30px;">
+                <img src="static/images/LocateAnything3D-grounding.png" alt="Indoor 3D object grounding benchmark table." data-lightbox data-caption="Indoor grounding: LocateAnything3D outperforms Cube-LLM variants trained on up to 9.6M images despite using only 1.7M CoS samples." style="width: 80%; display: block; margin: 0 auto;">
+                <strong>Indoor 3D Grounding.</strong>
+                <span>Beats Cube-LLM<sub>large</sub> across Objectron, ARKitScenes, and SUN-RGBD using 10× less data.</span>
+            </div>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: 30px;">
+                <img src="static/images/LocateAnything3D-novel.png" alt="Novel category evaluation table." data-lightbox data-caption="Novel categories: LocateAnything3D predicts 2D and 3D boxes end-to-end from a single image and attains the best zero-shot AP3D." style="width: 60%; display: block; margin: 0 auto;">
+                <strong>Novel Category Evaluation.</strong>
+                <span>No external 2D detector required; best zero-shot AP<sub>3D</sub> across KITTI, SUN, and OmniPark splits.</span>
+            </div>
+        </section>
+
+        <section id="analysis" class="compact">
+            <p class="section-title">Data Efficiency</p>
+            <h2>2D→3D Chain-of-Sight Accelerates Learning</h2>
+            <p>
+                The Chain-of-Sight formulation (blue) consistently outperforms a direct 3D baseline (purple) and reaches DetAny3D-level performance with only 10% of the training data. 2D pretraining (green) accelerates convergence relative to training from scratch (orange).
+            </p>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: -30px;">
+                <img src="static/images/LocateAnything3D-dataefficiency.png" alt="Data efficiency and training dynamics line plots." data-lightbox data-caption="Left: AP3D vs data percentage (CoS in blue, pure 3D in purple). Right: training steps with 2D pretraining (green) and without (orange); dashed line marks DetAny3D." style="width: 70%; display: block; margin: 0 auto;">
+                <span>Data efficiency and training dynamics analysis.</span>
+            </div>
+        </section>
+
+        <section id="qualitative">
+            <p class="section-title">Qualitative</p>
+            <h2>Zero-Shot Chain-of-Sight Inference</h2>
+            <p>Depth-colored cuboids stay consistent across in-the-wild scenes, indoor environments, and AR applications.</p>
+            <div class="figure-card" style="margin-top: 30px; margin-bottom: -30px;">
+                <img src="static/images/LocateAnything3D-qualitative.png" alt="Zero-shot qualitative figure." data-lightbox data-caption="Zero-shot 2D→3D outputs on driving, indoor, and tabletop imagery.">
+                <span>Zero-shot qualitative visualizations with depth-aware cuboids.</span>
+            </div>
+        </section>
+
+        <section id="citation" class="compact">
+            <p class="section-title">Citation</p>
+            <h2>LocateAnything3D</h2>
+            <p>Please cite LocateAnything3D if you find our Chain-of-Sight interface useful.</p>
+            <div class="citation-card">
+<pre>
+@article{man2025locateanything3d,
+  title   = {LocateAnything3D: Vision-Language 3D Detection with Chain-of-Sight},
+  author  = {Yunze Man and Shihao Wang and Guowen Zhang and Johan Bjorck and Zhiqi Li and Liang-Yan Gui and Jim Fan and Jan Kautz and Yu-Xiong Wang and Zhiding Yu},
+  journal = {arXiv preprint arXiv:2511.20648},
+  year    = {2025},
+}
+</pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>© 2025 LocateAnything3D Team. Built with a VLM-native mindset.</p>
+    </footer>
+</div>
+
+<dialog id="lightbox">
+    <div class="lightbox-body">
+        <button class="lightbox-close" type="button">Close ✕</button>
+        <img id="lightbox-img" src="" alt="Expanded figure">
+        <p id="lightbox-caption"></p>
+    </div>
+</dialog>
+
+<script>
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lightbox-img');
+    const lbCaption = document.getElementById('lightbox-caption');
+    const closeBtn = document.querySelector('.lightbox-close');
+
+    document.querySelectorAll('[data-lightbox]').forEach((node) => {
+        node.addEventListener('click', () => {
+            lbImg.src = node.src;
+            lbImg.alt = node.alt || 'Expanded figure';
+            lbCaption.textContent = node.dataset.caption || '';
+            lightbox.showModal();
+        });
+    });
+
+    closeBtn.addEventListener('click', () => lightbox.close());
+    lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+            lightbox.close();
+        }
+    });
+</script>
+</body>
+</html>
