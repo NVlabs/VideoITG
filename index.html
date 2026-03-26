@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding</title>
+  <meta name="description" content="VideoITG is an instructed temporal grounding framework for videos that adapts frame sampling strategies based on user instructions. Accepted by CVPR 2026.">
+  <meta property="og:title" content="VideoITG">
+  <meta property="og:description" content="Multimodal Video Understanding with Instructed Temporal Grounding. Accepted by CVPR 2026.">
+  <meta property="og:image" content="static/images/intro.png">
+  <link rel="icon" href="static/images/CVPR.png">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="hero" id="top">
+    <div class="hero-content">
+      <div class="hero-copy">
+        <div class="badge">
+          Accepted by CVPR 2026
+          <img src="static/images/CVPR.png" alt="CVPR 2026 Logo" loading="lazy">
+        </div>
+        <h1 class="hero-title">
+          <span class="hero-title-mark">VideoITG</span>
+          <span class="hero-title-rest">Multimodal Video Understanding with Instructed Temporal Grounding</span>
+        </h1>
+
+        <div class="author-list">
+          <a href="https://scholar.google.com.hk/citations?hl=zh-CN&user=7TWugs4AAAAJ" target="_blank" rel="noopener">Shihao Wang<sup>1‡</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=lRj3moAAAAAJ&hl=zh-CN&oi=sra" target="_blank" rel="noopener">Guo Chen<sup>2</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=HEY3UzgAAAAJ&hl=zh-CN&oi=ao" target="_blank" rel="noopener">De-an Huang<sup>3</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=H2fJLqEAAAAJ&hl=zh-CN&oi=sra" target="_blank" rel="noopener">Zhiqi Li<sup>2</sup></a>
+          <a href="https://scholar.google.com/citations?user=LhdBgMAAAAAJ&hl=zh-CN&oi=ao" target="_blank" rel="noopener">Minghan Li<sup>4</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=zOQj6-gAAAAJ&hl=zh-CN&oi=ao" target="_blank" rel="noopener">Guilin Liu<sup>3</sup></a>
+          <a href="https://scholar.google.com/citations?user=Oyx-_UIAAAAJ&hl=en" target="_blank" rel="noopener">Jose M. Alvarez<sup>3</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=tAK5l1IAAAAJ&hl=zh-CN&oi=ao" target="_blank" rel="noopener">Lei Zhang<sup>1†</sup></a>
+          <a href="https://scholar.google.com.hk/citations?user=1VI_oYUAAAAJ&hl=zh-CN&oi=ao" target="_blank" rel="noopener">Zhiding Yu<sup>3†</sup></a>
+        </div>
+
+        <div class="affiliations">
+          The Hong Kong Polytechnic University<sup>1</sup>, Nanjing University<sup>2</sup>, NVIDIA<sup>3</sup>, Harvard University<sup>4</sup>
+        </div>
+
+        <div class="affiliation-logos" aria-label="Partner institution logos">
+          <a href="https://www.polyu.edu.hk/" target="_blank" rel="noopener">
+            <img src="https://www.polyu.edu.hk/assets/img/main-logo-3x.png" alt="PolyU logo" loading="lazy">
+          </a>
+          <a href="https://www.nju.edu.cn/index.htm" target="_blank" rel="noopener">
+            <img src="https://www.nju.edu.cn/__local/F/7A/1D/91723945F34FAA0A9C67700CF8F_13B47AE2_E3A7.png" alt="NJU logo" loading="lazy" style="height: 34px;">
+          </a>
+          <a href="https://www.nvidia.com/" target="_blank" rel="noopener">
+            <img src="static/svgs/nvidia-logo.svg" alt="NVIDIA logo" loading="lazy">
+          </a>
+          <a href="https://hms.harvard.edu/" target="_blank" rel="noopener">
+            <img src="static/svgs/harvard-medical-school.svg" alt="Harvard Medical School logo" loading="lazy" style="height: 34px;">
+          </a>
+        </div>
+
+        <p class="author-note">† Equal Corresponding and Advising Authors &nbsp;·&nbsp; ‡ Work done during an internship at NVIDIA</p>
+        <p class="author-note">✉ cslzhang@comp.polyu.edu.hk; scutchrisding@gmail.com</p>
+
+        <p class="subtitle">
+          VideoITG is an instructed temporal grounding framework that adaptively customizes frame sampling strategies based on user instructions, enabling Video-LLMs to reason with the most informative frames under efficient supervision.
+        </p>
+
+        <div class="cta-row">
+          <a class="pill" href="https://arxiv.org/abs/2507.13353" title="arXiv" target="_blank" rel="noopener">📄 arXiv</a>
+          <a class="pill secondary" href="https://github.com/NVlabs/VideoITG" title="Code" target="_blank" rel="noopener">💾 Code</a>
+          <a class="pill secondary" href="https://huggingface.co/nvidia/VideoITG-8B" title="Model" target="_blank" rel="noopener">🤗 Model</a>
+          <a class="pill secondary" href="https://huggingface.co/datasets/NVEagle/VideoITG-40K" title="Dataset" target="_blank" rel="noopener">🗂️ Dataset</a>
+          <a class="pill secondary" href="#citation" title="BibTeX">📌 BibTeX</a>
+        </div>
+      </div>
+
+      <div class="hero-media">
+        <img src="static/images/intro.png" alt="VideoITG overview figure." data-lightbox data-caption="Figure 1: Overview of the VidThinker annotation pipeline for VideoITG. It consists of three human-inspired stages: (1) clip-level captioning under instructions; (2) instruction-guided relevant clip retrieval; and (3) fine-grained frame-level localization.">
+      </div>
+    </div>
+  </header>
+
+  <div class="teaser-figure" style="margin-top: 30px; margin-bottom: -30px;">
+    <img src="static/images/dataset.png" alt="VideoITG dataset construction overview." data-lightbox data-caption="Figure 2: Illustration of four instruction types and their corresponding frame selection strategies in VidThinker. For semantic-focused instructions, the system selects diverse frames capturing key visual clues. For motion-focused instructions, frames are uniformly sampled to capture dynamic changes. When both semantic and motion cues are required, a hybrid sampling strategy is applied. For vague or open-ended instructions, the system samples a minimal yet diverse set of frames across the video for holistic coverage.">
+    <p class="teaser-caption">VideoITG-40K is built via VidThinker: instruction-conditioned captioning, relevant clip retrieval, and fine-grained frame localization.</p>
+  </div>
+
+  <main>
+    <section id="abstract">
+      <p class="section-title">Abstract</p>
+      <h2>Instructed Temporal Grounding for Videos</h2>
+      <p>
+        While Video Large Language Models (Video-LLMs) have shown significant potential in multimodal understanding and reasoning tasks, how to efficiently select the most informative frames from videos remains a critical challenge. Existing methods attempt to optimize frame sampling by reducing inter-frame redundancy or employing unsupervised event localization. However, these approaches often fall short in handling complex instruction-following tasks and scenarios that demand precise temporal modeling, resulting in limited performance in both semantic alignment and temporal reasoning. To address the above challenges, we introduce <i>Instructed Temporal Grounding for Videos</i> (<b>VideoITG</b>), a framework aiming to adaptively customize frame sampling strategies based on user instructions. Specifically, we design the VidThinker pipeline, which automates annotation by generating instruction-conditioned captions, retrieving relevant video segments, and selecting key frames to enable efficient supervision. Using VidThinker, we build the VideoITG-40K dataset with 40K videos and 500K temporal grounding annotations. Our plug-and-play VideoITG model leverages Video-LLMs' visual-language alignment and reasoning for discriminative frame selection. VideoITG consistently boosts the performance on multiple multimodal video understanding benchmarks, demonstrating its effectiveness and potential.
+      </p>
+    </section>
+
+    <section id="data">
+      <p class="section-title">Dataset</p>
+      <h2>Dataset Construction</h2>
+      <div class="figure-card">
+        <img src="static/images/dataset.png" alt="Dataset construction figure." data-lightbox data-caption="Figure 2: Illustration of four instruction types and their corresponding frame selection strategies in VidThinker.">
+        <span><strong>Figure 2.</strong> Illustration of four instruction types and their corresponding frame selection strategies in VidThinker.</span>
+      </div>
+    </section>
+
+    <section id="model">
+      <p class="section-title">Model</p>
+      <h2>Model Design</h2>
+      <div class="figure-card">
+        <img src="static/images/method.png" alt="VideoITG model design figure." data-lightbox data-caption="Figure 3: VideoITG model design: (A) Text generation aligns video and language tokens for sequential predictions. (B) Classification with causal attention utilizes anchor tokens for temporal cue management. (C) Classification with full attention facilitates interaction across visual and text tokens without anchors.">
+        <span><strong>Figure 3.</strong> VideoITG model design: (A) Text generation aligns video and language tokens for sequential predictions. (B) Classification with causal attention utilizes anchor tokens for temporal cue management. (C) Classification with full attention facilitates interaction across visual and text tokens without anchors.</span>
+      </div>
+    </section>
+
+    <section id="experiments">
+      <p class="section-title">Experiments</p>
+      <h2>Results</h2>
+      <div class="figures-grid">
+        <div class="figure-card">
+          <img src="static/images/acc_speed.png" alt="Frame selection comparison." data-lightbox data-caption="Figure 4: Comparison of different frame selection methods on VideoMME with LLaVA-Video-7B. VideoITG consistently enhances baseline methods and achieves state-of-the-art performance.">
+          <span><strong>Figure 4.</strong> Frame selection comparison on VideoMME with LLaVA-Video-7B.</span>
+        </div>
+        <div class="figure-card">
+          <img src="static/images/exp1.png" alt="Main results table." data-lightbox data-caption="Table 2: Results with different selection methods.">
+          <span><strong>Table 2.</strong> Results with different selection methods.</span>
+        </div>
+        <div class="figure-card">
+          <img src="static/images/exp2.png" alt="Extension to more Video-LLMs." data-lightbox data-caption="Table 3: Performance comparison of VideoITG integrated with different Video-LLMs, varying in both the size of the answering LLM and the number of sampled frames.">
+          <span><strong>Table 3.</strong> Extension to more Video-LLMs with different model sizes and sampled frames.</span>
+        </div>
+        <div class="figure-card">
+          <img src="static/images/ablation.png" alt="Ablation study table." data-lightbox data-caption="Table 4: Empirical studies on the VideoITG-40K dataset and VideoITG model design.">
+          <span><strong>Table 4.</strong> Ablation studies on VideoITG-40K and model design.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="qualitative">
+      <p class="section-title">Qualitative</p>
+      <h2>Qualitative Results</h2>
+      <p>Our VideoITG model effectively searches for temporal cues in long videos, enabling VideoLLM to accurately answer questions.</p>
+      <div class="video-grid">
+        <div class="figure-card">
+          <div class="video-embed" aria-label="Qualitative example 1 video">
+            <iframe src="https://www.youtube.com/embed/E83XxGvEPtI" title="Qualitative example 1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+          <img src="static/images/example1.png" alt="Qualitative result 1." data-lightbox data-caption="Qualitative example 1 (Uni vs Ours).">
+          <span><strong>Example 1.</strong> Uni vs Ours qualitative comparison.</span>
+        </div>
+        <div class="figure-card">
+          <div class="video-embed" aria-label="Qualitative example 2 video">
+            <iframe src="https://www.youtube.com/embed/6DAFkaGUiT4" title="Qualitative example 2" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+          <img src="static/images/example2.png" alt="Qualitative result 2." data-lightbox data-caption="Qualitative example 2 (Uni vs Ours).">
+          <span><strong>Example 2.</strong> Uni vs Ours qualitative comparison.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="citation" class="compact">
+      <p class="section-title">Citation</p>
+      <h2>BibTeX</h2>
+      <div class="citation-card">
+        <pre>@misc{wang2025videoitgmultimodalvideounderstanding,
+  title={VideoITG: Multimodal Video Understanding with Instructed Temporal Grounding},
+  author={Shihao Wang and Guo Chen and De-an Huang and Zhiqi Li and Minghan Li and Guilin Liu and Jose M. Alvarez and Lei Zhang and Zhiding Yu},
+  year={2025},
+  eprint={2507.13353},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2507.13353},
+}</pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>
+      This website is licensed under a
+      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+      Website source code is adapted from the <a href="https://nerfies.github.io/" target="_blank" rel="noopener">Nerfies</a> project page and the LocateAnything3D template.
+    </p>
+  </footer>
+</div>
+
+<dialog id="lightbox">
+  <div class="lightbox-body">
+    <button class="lightbox-close" type="button">Close ✕</button>
+    <img id="lightbox-img" src="" alt="Expanded figure">
+    <p id="lightbox-caption"></p>
+  </div>
+</dialog>
+
+<script>
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightbox-img');
+  const lbCaption = document.getElementById('lightbox-caption');
+  const closeBtn = document.querySelector('.lightbox-close');
+
+  document.querySelectorAll('[data-lightbox]').forEach((node) => {
+    node.addEventListener('click', () => {
+      lbImg.src = node.src;
+      lbImg.alt = node.alt || 'Expanded figure';
+      lbCaption.textContent = node.dataset.caption || '';
+      lightbox.showModal();
+    });
+  });
+
+  closeBtn.addEventListener('click', () => lightbox.close());
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox) {
+      lightbox.close();
+    }
+  });
+
+  // Auto-layout for results: widen cards for wide figures/tables.
+  const resultsImgs = document.querySelectorAll('#experiments .figures-grid .figure-card img');
+  resultsImgs.forEach((img) => {
+    const apply = () => {
+      if (!img.naturalWidth || !img.naturalHeight) return;
+      const ratio = img.naturalWidth / img.naturalHeight;
+      const card = img.closest('.figure-card');
+      if (!card) return;
+      if (ratio >= 1.55) {
+        card.classList.add('is-wide');
+      }
+    };
+    if (img.complete) apply();
+    img.addEventListener('load', apply, { once: true });
+  });
+</script>
+</body>
+</html>
