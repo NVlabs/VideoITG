@@ -4,7 +4,7 @@
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
 [![Model License](https://img.shields.io/badge/MODEL%20License-CC%20By%20NC%204.0-red.svg)](MODEL_LICENSE)
-[![CVPR 2026](https://img.shields.io/badge/CVPR%202026-Accepted-48c774.svg)](#)
+[![CVPR 2026 Highlight](https://img.shields.io/badge/CVPR%202026-Highlight-f5c542.svg)](#)
 
 
 
@@ -36,6 +36,7 @@ While Video Large Language Models (Video-LLMs) have shown significant potential 
 
 
 ## Updates
+- [2026/04/09] 🌟 **Selected as CVPR 2026 Highlight**!
 - [2026/03/17] Release notes: add **CG-Bench (mini)** evaluation support and release **Qwen3-VL** + **InternVL3.5** evaluation scripts under `scripts/eval_lmms_eval/`.
 - [2026/02/21] 🎉 **Accepted by CVPR 2026**.
 - [2025/09/30] The results of VideoITG on benchmarks release. See [results](results/) for released JSONL files.
